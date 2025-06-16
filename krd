@@ -1,0 +1,141 @@
+-- ULTIMATE DELTA LOADING SCREEN - "JACK" EDITION
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- DARKEN THE ENTIRE GAME (for cinematic effect)
+Lighting.Brightness = 0
+Lighting.Ambient = Color3.new(0, 0, 0)
+Lighting.OutdoorAmbient = Color3.new(0, 0, 0)
+
+-- Create full-screen GUI
+local deltaGui = Instance.new("ScreenGui")
+deltaGui.Name = "JackDeltaUltimate"
+deltaGui.ResetOnSpawn = false
+deltaGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+deltaGui.Parent = PlayerGui
+
+-- Full black background
+local background = Instance.new("Frame")
+background.Name = "BlackScreen"
+background.Size = UDim2.new(1, 0, 1, 0)
+background.Position = UDim2.new(0, 0, 0, 0)
+background.BackgroundColor3 = Color3.new(0, 0, 0)
+background.BorderSizePixel = 0
+background.Parent = deltaGui
+
+-- Main "JACK" text (cyberpunk style)
+local jackText = Instance.new("TextLabel")
+jackText.Name = "JackText"
+jackText.Size = UDim2.new(0.8, 0, 0.2, 0)
+jackText.Position = UDim2.new(0.1, 0, 0.3, 0)
+jackText.BackgroundTransparency = 1
+jackText.Text = "Jack 827"
+jackText.TextColor3 = Color3.fromRGB(0, 255, 255) -- Neon cyan
+jackText.TextScaled = true
+jackText.Font = Enum.Font.SciFi
+jackText.TextStrokeTransparency = 0
+jackText.TextStrokeColor3 = Color3.fromRGB(0, 100, 255)
+jackText.ZIndex = 2
+jackText.Parent = background
+
+-- Glitch effect (random flicker)
+task.spawn(function()
+    while true do
+        jackText.TextTransparency = 0.3 + math.random() * 0.2
+        jackText.TextColor3 = Color3.fromHSV(math.random(), 1, 1)
+        task.wait(0.1)
+    end
+end)
+
+-- Percentage counter
+local percentText = Instance.new("TextLabel")
+percentText.Name = "PercentText"
+percentText.Size = UDim2.new(0.5, 0, 0.1, 0)
+percentText.Position = UDim2.new(0.25, 0, 0.6, 0)
+percentText.BackgroundTransparency = 1
+percentText.Text = "1%"
+percentText.TextColor3 = Color3.fromRGB(255, 255, 255)
+percentText.TextScaled = true
+percentText.Font = Enum.Font.Code
+percentText.TextStrokeTransparency = 0.5
+percentText.Parent = background
+
+-- Progress bar
+local progressBar = Instance.new("Frame")
+progressBar.Name = "ProgressBar"
+progressBar.Size = UDim2.new(0.6, 0, 0.02, 0)
+progressBar.Position = UDim2.new(0.2, 0, 0.7, 0)
+progressBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+progressBar.BorderSizePixel = 0
+progressBar.Parent = background
+
+local progressFill = Instance.new("Frame")
+progressFill.Name = "ProgressFill"
+progressFill.Size = UDim2.new(0, 0, 1, 0)
+progressFill.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
+progressFill.BorderSizePixel = 0
+progressFill.Parent = progressBar
+
+-- Particle effects (floating binary code)
+local particles = Instance.new("ParticleEmitter")
+particles.Texture = "rbxassetid://9650363693" -- Binary code texture
+particles.LightEmission = 1
+particles.Size = NumberSequence.new(10)
+particles.Lifetime = NumberRange.new(3)
+particles.Speed = NumberRange.new(20)
+particles.Rate = 50
+particles.SpreadAngle = Vector2.new(180, 180)
+particles.Parent = background
+
+-- Percentage counter animation
+task.spawn(function()
+    for i = 1, 100 do
+        percentText.Text = i .. "%"
+        progressFill.Size = UDim2.new(i / 100, 0, 1, 0)
+        
+        -- Change color based on progress
+        if i < 30 then
+            progressFill.BackgroundColor3 = Color3.fromRGB(255, 50, 50) -- Red
+        elseif i < 70 then
+            progressFill.BackgroundColor3 = Color3.fromRGB(255, 150, 0) -- Orange
+        else
+            progressFill.BackgroundColor3 = Color3.fromRGB(0, 255, 100) -- Green
+        end
+        
+        task.wait(0.08) -- Smooth count-up speed
+    end
+    
+    -- Final "COMPLETE" message
+    percentText.Text = "100% - COMPLETE"
+    percentText.TextColor3 = Color3.fromRGB(0, 255, 0)
+    
+    -- Flash effect
+    for i = 1, 3 do
+        percentText.TextTransparency = 0.3
+        task.wait(0.1)
+        percentText.TextTransparency = 0
+        task.wait(0.1)
+    end
+end)
+
+-- Auto-hide after 8 seconds
+task.delay(8, function()
+    -- Fade-out animation
+    local fadeTween = TweenService:Create(background, TweenInfo.new(1), {
+        BackgroundTransparency = 1
+    })
+    fadeTween:Play()
+    
+    -- Restore lighting
+    Lighting.Brightness = 1
+    Lighting.Ambient = Color3.new(0.5, 0.5, 0.5)
+    
+    -- Destroy GUI after fade
+    fadeTween.Completed:Wait()
+    deltaGui:Destroy()
+end)
