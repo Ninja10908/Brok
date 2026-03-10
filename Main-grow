@@ -1,1 +1,174 @@
-([[This file was protected with MoonSec V3]]):gsub('.+', (function(a) _AFYlQOgbvmyj = a; end)); return(function(h,...)local a;local d;local o;local t;local s;local r;local e=24915;local n=0;local l={};while n<821 do n=n+1;while n<0x172 and e%0x1be8<0xdf4 do n=n+1 e=(e+1009)%26940 local f=n+e if(e%0x2ece)>0x1767 then e=(e-0xba)%0xba76 while n<0x314 and e%0x938<0x49c do n=n+1 e=(e*227)%13656 local o=n+e if(e%0x3f7c)>=0x1fbe then e=(e-0x169)%0xad10 local e=81357 if not l[e]then l[e]=0x1 s=tonumber;end elseif e%2~=0 then e=(e*0x89)%0x5da6 local e=52648 if not l[e]then l[e]=0x1 d=(not d)and _ENV or d;end else e=(e*0x392)%0x7bc1 n=n+1 local e=43480 if not l[e]then l[e]=0x1 a="\4\8\116\111\110\117\109\98\101\114\76\110\104\80\117\107\98\107\0\6\115\116\114\105\110\103\4\99\104\97\114\115\83\66\121\100\118\104\87\0\6\115\116\114\105\110\103\3\115\117\98\122\116\77\106\70\107\90\118\0\6\115\116\114\105\110\103\4\98\121\116\101\82\71\119\69\86\98\100\76\0\5\116\97\98\108\101\6\99\111\110\99\97\116\73\97\83\73\65\79\116\121\0\5\116\97\98\108\101\6\105\110\115\101\114\116\110\65\120\67\74\102\108\113\5";end end end elseif e%2~=0 then e=(e*0x3f4)%0xa165 while n<0x39b and e%0x3728<0x1b94 do n=n+1 e=(e*353)%35141 local a=n+e if(e%0x1efc)>0xf7e then e=(e*0x1a6)%0x3cf1 local e=66008 if not l[e]then l[e]=0x1 end elseif e%2~=0 then e=(e+0x21b)%0xc2c0 local e=78395 if not l[e]then l[e]=0x1 end else e=(e+0xd1)%0x8f53 n=n+1 local e=79075 if not l[e]then l[e]=0x1 o=function(l)local e=0x01 local function n(n)e=e+n return l:sub(e-n,e-0x01)end while true do local l=n(0x01)if(l=="\5")then break end local e=r.byte(n(0x01))local e=n(e)if l=="\2"then e=t.LnhPukbk(e)elseif l=="\3"then e=e~="\0"elseif l=="\6"then d[e]=function(e,n)return h(8,nil,h,n,e)end elseif l=="\4"then e=d[e]elseif l=="\0"then e=d[e][n(r.byte(n(0x01)))];end local n=n(0x08)t[n]=e end end end end end else e=(e-0x289)%0x1c96 n=n+1 while n<0x2a4 and e%0x3230<0x1918 do n=n+1 e=(e-36)%31029 local o=n+e if(e%0x1a0e)<0xd07 then e=(e+0x2aa)%0x826e local e=13361 if not l[e]then l[e]=0x1 t={};end elseif e%2~=0 then e=(e+0x3fd)%0x8b26 local e=4075 if not l[e]then l[e]=0x1 r=string;end else e=(e+0x35c)%0x32d3 n=n+1 local e=43795 if not l[e]then l[e]=0x1 d=getfenv and getfenv();end end end end end e=(e-701)%4573 end o(a);local n={};for e=0x0,0xff do local l=t.sSBydvhW(e);n[e]=l;n[l]=e;end local function c(e)return n[e];end local r=(function(a,o)local f,l=0x01,0x10 local n={{},{},{}}local d=-0x01 local e=0x01 local r=a while true do n[0x03][t.ztMjFkZv(o,e,(function()e=f+e return e-0x01 end)())]=(function()d=d+0x01 return d end)()if d==(0x0f)then d=""l=0x000 break end end local d=#o while e<d+0x01 do n[0x02][l]=t.ztMjFkZv(o,e,(function()e=f+e return e-0x01 end)())l=l+0x01 if l%0x02==0x00 then l=0x00 t.nAxCJflq(n[0x01],(c((((n[0x03][n[0x02][0x00]]or 0x00)*0x10)+(n[0x03][n[0x02][0x01]]or 0x00)+r)%0x100)));r=a+r;end end return t.IaSIAOty(n[0x01])end);o(r(167,"rv#<FDQp>i=V?Be0De"));o(r(120,"UO9Tr>kRmZMIhd12mmOkDIZrOMZZ9kMRhhIrrdhd>mIRkId>>>2dR92ORmIrTdTVMITOhrrhhOk91RrRh1mR1hkdMZT>9mI9TOI1rhdmTh1xrRdT>dd>>IMG919TMhT9IOT1I21>d>>O1hkT2Xk;11kmORRO9ZmIr9>wdhhdrZ1rkKm>Rr2rRdOmZmOrm>OTZMOdhTrIdh2rmrRT1dmrX>m>OhZO9hMO9MIhTdIv>1dkr>hkRI2hmMMrT.9rMRTTIhr9hOr1h2kZ1>R9hIkM&1ZR2mTuIdIr9ZI9rrh>111>kk2<kZ2TmT-hm2OkZO;Im19+h>1rk1k>1kRc1ZRTaTmOOrRT9rMOP1Zhrrkr1d14kM1ZRkGrk+wRRR9,M99TMZOR>h1kdI>>1rk>1Imr2ZkhghmM}TM2TIZMdmkr>>dOkh1m%d2kmrt2ZR99m1ORIZrThE9RM2TIRd"));local e=(-858+(function()local d,n=0,1;(function(l,e,n)e(l(e,l,e),l(e,e,n),n(e,e and e,n))end)(function(l,o,e)if d>237 then return o end d=d+1 n=(n+396)%13290 if(n%828)<=414 then return e else return o(o(e and l,e,e),o(l,e,l),l(e,e,l))end return e(e(o,e,e),e(e,l,l and o)and l(o and e,e,e),o(l,o,l and l))end,function(o,l,e)if d>275 then return o end d=d+1 n=(n*194)%3615 if(n%294)<=147 then n=(n+933)%2033 return l else return e(e(e and o,l and o,e)and l(l,l and e,l),e(e,e,l),e(l,e,e))end return e(o(l,l,o),e(e,o,e),o(e,o,o))end,function(l,e,o)if d>453 then return l end d=d+1 n=(n*26)%2843 if(n%1934)>967 then return e(e(e and o,o,l and e),e(e and e,e,o),l(e and o,l,e)and l(e,o,l))else return l end return o end)return n;end)())local p=(getfenv)or(function()return _ENV end);local f=t.alClaFLl or t.lgfYKFPm;local o=3;local g=1;local d=2;local c=4;local function _(b,...)local u=r(e,"Uz0vQ!Tbeoy P(<i< PeyPo_bbT!vP0aBQQbs(iT<(<Qy(eie TyT0v(0(/0biTbQQ0e3PveQe0PXPPbPo P0ivziQ(e P+eie(P PyvQ<0bX vt^!i <2 !oTezTy_<0bzbiooiPTooov0iv0zPzz-T< yiy<bzOb<PPP ,oQ(i (y(eor zv(r Qoe(wPey(o 0P!Tv(0Qjzyf( yooivgTQQy0 zQ<oP P-o!beze!v0ozeiKePo(yvebTyvv0oh yPPTebv v!W_<QPeioii<vPTeie!TbQbzi0Q&T<zPyybob!r!!vQzei(<yyz eoPb<iv(< eoPeH(A be(bQTbQP0<toi0PiQPvWzQie(PPiyQeeTP!.Q0zeiP<MP!yeePbaTTQbzPCB<QP<yPoVbQTy!o0-3Q<eP( YoQbee0Q00Q7e<P(T QoobPT!QQ0PzTiI(Q ey0eST!QevYzyiQ(e PybeQToQPvWzQie(PPay!eeTP!DQTz<iP</PQyiePb/!QQy0<Su<!Pe Ho)bQ!e!PvYOQ<oPP zoQby!P!00Pre<i(5 boebPTWQQ0(dPiz(Q  oPe_TQQev zAiQ(e Py7eTTeQPQ0zQie(PPzyQeoTP!FvozeiP<FP!yeePbA");local n=0;t.YroGFwTM(function()n=n+1 end)local function e(l,e)if e then return n end;n=l+n;end local l,n,a=h(0,h,e,u,t.RGwEVbdL);local function r()local n,l=t.RGwEVbdL(u,e(1,3),e(5,6)+2);e(2);return(l*256)+n;end;local k=true;local k=0 local function y()local d=n();local e=n();local o=1;local d=(l(e,1,20)*(2^32))+d;local n=l(e,21,31);local e=((-1)^l(e,32));if(n==0)then if(d==k)then return e*0;else n=1;o=0;end;elseif(n==2047)then return(d==0)and(e*(1/0))or(e*(0/0));end;return t.dMSRMkkt(e,n-1023)*(o+(d/(2^52)));end;local m=n;local function z(n)local l;if(not n)then n=m();if(n==0)then return'';end;end;l=t.ztMjFkZv(u,e(1,3),e(5,6)+n-1);e(n)local e=""for n=(1+k),#l do e=e..t.ztMjFkZv(l,n,n)end return e;end;local k=#t.ymrCZvwP(s('\49.\48'))~=1 local e=n;local function ne(...)return{...},t.aLdZKosJ('#',...)end local function _()local s={};local u={};local e={};local h={u,s,nil,e};local e=n()local f={}for d=1,e do local l=a();local n;if(l==2)then n=(a()~=#{});elseif(l==1)then local e=y();if k and t.PVHoAqKz(t.ymrCZvwP(e),'.(\48+)$')then e=t.VWqshGGK(e);end n=e;elseif(l==3)then n=z();end;f[d]=n;end;h[3]=a();for e=1,n()do s[e-(#{1})]=_();end;for h=1,n()do local e=a();if(l(e,1,1)==0)then local t=l(e,2,3);local a=l(e,4,6);local e={r(),r(),nil,nil};if(t==0)then e[o]=r();e[c]=r();elseif(t==#{1})then e[o]=n();elseif(t==b[2])then e[o]=n()-(2^16)elseif(t==b[3])then e[o]=n()-(2^16)e[c]=r();end;if(l(a,1,1)==1)then e[d]=f[e[d]]end if(l(a,2,2)==1)then e[o]=f[e[o]]end if(l(a,3,3)==1)then e[c]=f[e[c]]end u[h]=e;end end;return h;end;local function z(l,e,n)local d=e;local d=n;return s(t.PVHoAqKz(t.PVHoAqKz(({t.YroGFwTM(l)})[2],e),n))end local function ee(y,e,u)local function ee(...)local a,p,b,j,s,l,r,_,m,k,z,n;local e=0;while-1<e do if e<3 then if 0>=e then a=h(6,53,1,16,y);p=h(6,27,2,79,y);else if-3<e then for n=26,74 do if 2~=e then b=h(6,40,3,68,y);s=ne j=0;break;end;l=-41;r=-1;break;end;else l=-41;r=-1;end end else if e<=4 then if-1~=e then for n=13,84 do if 4~=e then _={};m={...};break;end;k=t.aLdZKosJ('#',...)-1;z={};break;end;else k=t.aLdZKosJ('#',...)-1;z={};end else if e>=2 then repeat if e~=6 then n=h(7);break;end;e=-2;until true;else n=h(7);end end end e=e+1;end;for e=0,k do if(e>=b)then _[e-b]=m[e+1];else n[e]=m[e+1];end;end;local e=k-b+1 local e;local t;local function h(...)while true do end end while true do if l<-40 then l=l+42 end e=a[l];t=e[g];if t<12 then if 5<t then if 8<t then if t<=9 then local l=e[d];local d=n[e[o]];n[l+1]=d;n[l]=d[e[c]];else if 6<t then for r=22,95 do if t~=10 then n(e[d],e[o]);break;end;l=e[o];break;end;else n(e[d],e[o]);end end else if t>=7 then if t==7 then n[e[d]]();else local l=e[d];local d=n[e[o]];n[l+1]=d;n[l]=d[e[c]];end else n[e[d]]=u[e[o]];end end else if 3>t then if t>=1 then if t>=-3 then repeat if 2~=t then local e=e[d]n[e]=n[e](f(n,e+1,r))break;end;local l=e[d]local d,e=s(n[l](f(n,l+1,e[o])))r=e+l-1 local e=0;for l=l,r do e=e+1;n[l]=d[e];end;until true;else local e=e[d]n[e]=n[e](f(n,e+1,r))end else do return end;end else if 4<=t then if t>0 then repeat if t~=5 then if(n[e[d]]==e[c])then l=l+1;else l=e[o];end;break;end;local l=e[d]local d,e=s(n[l](f(n,l+1,e[o])))r=e+l-1 local e=0;for l=l,r do e=e+1;n[l]=d[e];end;until true;else local l=e[d]local d,e=s(n[l](f(n,l+1,e[o])))r=e+l-1 local e=0;for l=l,r do e=e+1;n[l]=d[e];end;end else do return end;end end end else if t>17 then if t>20 then if 21<t then if t==23 then u[e[o]]=n[e[d]];else n[e[d]]=(e[o]~=0);end else n[e[d]]();end else if t>18 then if t>18 then for r=44,81 do if 19<t then if(n[e[d]]==e[c])then l=l+1;else l=e[o];end;break;end;n[e[d]]=(e[o]~=0);break;end;else n[e[d]]=(e[o]~=0);end else local t,b,k,y,h;n[e[d]]=u[e[o]];l=l+1;e=a[l];t=e[d];b=n[e[o]];n[t+1]=b;n[t]=b[e[c]];l=l+1;e=a[l];n(e[d],e[o]);l=l+1;e=a[l];t=e[d]k,y=s(n[t](f(n,t+1,e[o])))r=y+t-1 h=0;for e=t,r do h=h+1;n[e]=k[h];end;l=l+1;e=a[l];t=e[d]n[t]=n[t](f(n,t+1,r))l=l+1;e=a[l];n[e[d]]();l=l+1;e=a[l];do return end;end end else if 15<=t then if t>15 then if 17>t then local e=e[d]n[e]=n[e](f(n,e+1,r))else l=e[o];end else local r,c,t,a,f;local l=0;while l>-1 do if l<3 then if l<=0 then r=e;else if 0~=l then repeat if l~=1 then t=o;break;end;c=d;until true;else t=o;end end else if 5>l then if l>-1 then for e=10,58 do if 4>l then a=r[t];break;end;f=r[c];break;end;else a=r[t];end else if l>=2 then repeat if l>5 then l=-2;break;end;n(f,a);until true;else l=-2;end end end l=l+1 end end else if 12>=t then n[e[d]]=u[e[o]];else if t<14 then u[e[o]]=n[e[d]];else for t=0,3 do if t<=1 then if t<1 then n[e[d]]=(e[o]~=0);l=l+1;e=a[l];else u[e[o]]=n[e[d]];l=l+1;e=a[l];end else if 3==t then if(n[e[d]]==e[c])then l=l+1;else l=e[o];end;else n[e[d]]=u[e[o]];l=l+1;e=a[l];end end end end end end end end l=1+l;end;end;return ee end;local d=0xff;local c={};local r=(1);local o='';(function(n)local l=n local t=0x00 local e=0x00 l={(function(d)if t>0x31 then return d end t=t+1 e=(e+0xbc9-d)%0x2f return(e%0x03==0x0 and(function(l)if not n[l]then e=e+0x01 n[l]=(0x81);end return true end)'EflGq'and l[0x3](0x1a4+d))or(e%0x03==0x1 and(function(l)if not n[l]then e=e+0x01 n[l]=(0xf5);end return true end)'GOfhi'and l[0x1](d+0x364))or(e%0x03==0x2 and(function(l)if not n[l]then e=e+0x01 n[l]=(0x44);end return true end)'qembO'and l[0x2](d+0x99))or d end),(function(a)if t>0x1f then return a end t=t+1 e=(e+0x91f-a)%0x37 return(e%0x03==0x0 and(function(l)if not n[l]then e=e+0x01 n[l]=(0x87);c[r]=p();r=r+d;end return true end)'bACBm'and l[0x3](0x211+a))or(e%0x03==0x2 and(function(l)if not n[l]then e=e+0x01 n[l]=(0x7a);end return true end)'YzEjS'and l[0x1](a+0x2b3))or(e%0x03==0x1 and(function(l)if not n[l]then e=e+0x01 n[l]=(0xd);d[2]=(d[2]*(z(function()c()end,f(o))-z(d[1],f(o))))+1;c[r]={};d=d[2];r=r+d;end return true end)'QTLfo'and l[0x2](a+0x11b))or a end),(function(a)if t>0x2a then return a end t=t+1 e=(e+0x5b6-a)%0x2e return(e%0x03==0x1 and(function(l)if not n[l]then e=e+0x01 n[l]=(0x6c);o={o..'\58 a',o};c[r]=_();r=r+(1);o[1]='\58'..o[1];d[2]=0xff;end return true end)'qhSPr'and l[0x2](0x2af+a))or(e%0x03==0x2 and(function(l)if not n[l]then e=e+0x01 n[l]=(0x5d);o='\37';d={function()d()end};o=o..'\100\43';end return true end)'AymoU'and l[0x3](a+0x1be))or(e%0x03==0x0 and(function(l)if not n[l]then e=e+0x01 n[l]=(0xe3);end return true end)'hLSrq'and l[0x1](a+0x10d))or a end)}l[0x3](0x1bd)end){};local e=ee(f(c));return e(...);end return _((function()local n={}local e=0x01;local l;if t.GsUMmZQP then l=t.GsUMmZQP(_)else l=''end if t.PVHoAqKz(l,t.xTpOSUEC)then e=e+0;else e=e+1;end n[e]=0x02;n[n[e]+0x01]=0x03;return n;end)(),...)end)((function(e,n,l,d,o,t)local t;if 3<e then if e<6 then if e>=0 then for t=17,75 do if 5>e then local e=d;local o,t,d=o(2);do return function()local n,a,r,l=n(l,e(e,e),e(e,e)+3);e(4);return(l*o)+(r*t)+(a*d)+n;end;end;break;end;local e=d;do return function()local n=n(l,e(e,e),e(e,e));e(1);return n;end;end;break;end;else local e=d;local o,d,t=o(2);do return function()local r,l,a,n=n(l,e(e,e),e(e,e)+3);e(4);return(n*o)+(a*d)+(l*t)+r;end;end;end else if e>=7 then if 4<e then for n=21,76 do if e~=7 then do return l(e,nil,l);end break;end;do return setmetatable({},{['__\99\97\108\108']=function(e,o,d,l,n)if n then return e[n]elseif l then return e else e[o]=d end end})end break;end;else do return setmetatable({},{['__\99\97\108\108']=function(e,l,o,d,n)if n then return e[n]elseif d then return e else e[l]=o end end})end end else do return o[l]end;end end else if 2<=e then if e>1 then for t=28,54 do if 2~=e then do return n(1),n(4,o,d,l,n),n(5,o,d,l)end;break;end;do return 16777216,65536,256 end;break;end;else do return 16777216,65536,256 end;end else if e~=0 then do return function(l,e,n)if n then local e=(l/2^(e-1))%2^((n-1)-(e-1)+1);return e-e%1;else local e=2^(e-1);return(l%(e+e)>=e)and 1 or 0;end;end;end;else do return n(1),n(4,o,d,l,n),n(5,o,d,l)end;end end end end),...)
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local task = task
+
+local TpToBestSystem = {}
+TpToBestSystem.Enabled = false
+TpToBestSystem.Connections = {}
+TpToBestSystem.isStopping = false
+TpToBestSystem.hasReachedHeight = false
+TpToBestSystem.targetHeight = nil
+TpToBestSystem.currentBestPet = nil
+TpToBestSystem.baseCoordinates = {
+    ["Base 1"] = Vector3.new(-475.9, 17.5, -102.3),
+    ["Base 2"] = Vector3.new(-342.8, 17.5, -100.2),
+    ["Base 3"] = Vector3.new(-342.9, 17.5, 6.2),
+    ["Base 4"] = Vector3.new(-343.1, 17.5, 112.6),
+    ["Base 5"] = Vector3.new(-343.3, 17.5, 220.8),
+    ["Base 6"] = Vector3.new(-476.2, 17.5, 219.7),
+    ["Base 7"] = Vector3.new(-476.1, 17.5, 114.1),
+    ["Base 8"] = Vector3.new(-476.5, 17.5, 6.6)
+}
+
+local function parseValue(text)
+    text = tostring(text or ""):gsub("%s", "")
+    local num, suffix = text:match("([%d%.]+)([KkMmBbTt]?)")
+    if not num then return 0 end
+    num = tonumber(num) or 0
+    local multipliers = {K=1e3, M=1e6, B=1e9, T=1e12}
+    local mult = multipliers[(suffix or ""):upper()] or 1
+    return num * mult
+end
+
+function TpToBestSystem:getValidFlyTool()
+    local char = LocalPlayer.Character
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    local toolNames = {"Flying Carpet", "Witch's Broom", "Santa's Sleigh"}
+    for _, name in ipairs(toolNames) do
+        local tool = (backpack and backpack:FindFirstChild(name)) or (char and char:FindFirstChild(name))
+        if tool then return tool end
+    end
+    return nil
+end
+
+function TpToBestSystem:findClosestBase(petPosition)
+    local closestBase = nil
+    local closestDistance = math.huge
+    for baseName, baseCoord in pairs(self.baseCoordinates) do
+        local distance = (petPosition - baseCoord).Magnitude
+        if distance < closestDistance then
+            closestDistance = distance
+            closestBase = baseName
+        end
+    end
+    return closestBase
+end
+
+function TpToBestSystem:findMostExpensiveBrainrot()
+    if self.isStopping then return nil end
+    local Workspace = game:GetService("Workspace")
+    local debris = Workspace:FindFirstChild("Debris")
+    if not debris then return nil end
+    local bestPet = {value = -1, part = nil}
+    for _, template in ipairs(debris:GetChildren()) do
+        if template.Name == "FastOverheadTemplate" then
+            local surfaceGui = template:FindFirstChildOfClass("SurfaceGui")
+            if surfaceGui and surfaceGui.Adornee and surfaceGui.Adornee.Parent then
+                local genLabel = surfaceGui:FindFirstChild("Generation", true)
+                if genLabel and genLabel:IsA("TextLabel") then
+                    local text = genLabel.Text or ""
+                    if text ~= "" and (text:find("/s") or text:find("K") or text:find("M") or text:find("B") or text:find("T")) then
+                        local val = parseValue(text)
+                        if val > bestPet.value then
+                            bestPet.value = val
+                            bestPet.part = surfaceGui.Adornee
+                        end
+                    end
+                end
+            end
+        end
+    end
+    if bestPet.part then
+        return {position = bestPet.part.Position, baseName = self:findClosestBase(bestPet.part.Position)}
+    end
+    return nil
+end
+
+function TpToBestSystem:equipTool()
+    local tool = self:getValidFlyTool()
+    if tool and tool.Parent == LocalPlayer:FindFirstChild("Backpack") then
+        local char = LocalPlayer.Character
+        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+        if humanoid then humanoid:EquipTool(tool) end
+    end
+    return tool
+end
+
+function TpToBestSystem:stopMovement()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+    end
+end
+
+function TpToBestSystem:cleanStop()
+    self.isStopping = true
+    self.hasReachedHeight = false
+    self.targetHeight = nil
+    for _, conn in pairs(self.Connections) do
+        if conn then conn:Disconnect() end
+    end
+    self.Connections = {}
+    self:stopMovement()
+    task.wait(0.1)
+    self.isStopping = false
+end
+
+function TpToBestSystem:teleportToBestBrainrot()
+    if self.isStopping then return end
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp or not self.currentBestPet then return end
+    local targetBase = self.baseCoordinates[self.currentBestPet.baseName]
+    hrp.CFrame = CFrame.new(targetBase or self.currentBestPet.position)
+    task.wait(0.5)
+    self:cleanStop()
+end
+
+function TpToBestSystem:startSystem()
+    if self.Enabled then return end
+    
+    local tool = self:getValidFlyTool()
+    if not tool then
+        warn("No tool found!")
+        return
+    end
+
+    self.Enabled = true
+    self.isStopping = false
+    self.hasReachedHeight = false
+    self.currentBestPet = self:findMostExpensiveBrainrot()
+    
+    if not self.currentBestPet then
+        self.Enabled = false
+        return
+    end
+    
+    self:equipTool()
+    task.wait(0.2)
+    
+    self.Connections.movement = RunService.Heartbeat:Connect(function()
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if not hrp or self.isStopping then return end
+        
+        if not self.hasReachedHeight then
+            if not self.targetHeight then
+                self.targetHeight = Vector3.new(hrp.Position.X, hrp.Position.Y + 35, hrp.Position.Z)
+            end
+            
+            if (hrp.Position - self.targetHeight).Magnitude > 3 then
+                hrp.AssemblyLinearVelocity = (self.targetHeight - hrp.Position).Unit * 100
+            else
+                self.hasReachedHeight = true
+                self:stopMovement()
+                task.wait(0.1)
+                self:teleportToBestBrainrot()
+                self.Enabled = false
+            end
+        end
+    end)
+end
+
+TpToBestSystem:startSystem()
