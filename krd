@@ -1,141 +1,223 @@
--- ULTIMATE DELTA LOADING SCREEN - "JACK" EDITION
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
-local Lighting = game:GetService("Lighting")
+local Pl = game:GetService("Players")
+local Rs = game:GetService("RunService")
+local Me = Pl.LocalPlayer
 
-local LocalPlayer = Players.LocalPlayer
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local c = Me.Character or Me.CharacterAdded:Wait()
+local hrp = c:WaitForChild("HumanoidRootPart")
+local uc = nil
+local sg = nil
+local ubButton = nil
+local characterAddedConnection = nil
 
--- DARKEN THE ENTIRE GAME (for cinematic effect)
-Lighting.Brightness = 0
-Lighting.Ambient = Color3.new(0, 0, 0)
-Lighting.OutdoorAmbient = Color3.new(0, 0, 0)
-
--- Create full-screen GUI
-local deltaGui = Instance.new("ScreenGui")
-deltaGui.Name = "JackDeltaUltimate"
-deltaGui.ResetOnSpawn = false
-deltaGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-deltaGui.Parent = PlayerGui
-
--- Full black background
-local background = Instance.new("Frame")
-background.Name = "BlackScreen"
-background.Size = UDim2.new(1, 0, 1, 0)
-background.Position = UDim2.new(0, 0, 0, 0)
-background.BackgroundColor3 = Color3.new(0, 0, 0)
-background.BorderSizePixel = 0
-background.Parent = deltaGui
-
--- Main "JACK" text (cyberpunk style)
-local jackText = Instance.new("TextLabel")
-jackText.Name = "JackText"
-jackText.Size = UDim2.new(0.8, 0, 0.2, 0)
-jackText.Position = UDim2.new(0.1, 0, 0.3, 0)
-jackText.BackgroundTransparency = 1
-jackText.Text = "Jack 827"
-jackText.TextColor3 = Color3.fromRGB(0, 255, 255) -- Neon cyan
-jackText.TextScaled = true
-jackText.Font = Enum.Font.SciFi
-jackText.TextStrokeTransparency = 0
-jackText.TextStrokeColor3 = Color3.fromRGB(0, 100, 255)
-jackText.ZIndex = 2
-jackText.Parent = background
-
--- Glitch effect (random flicker)
-task.spawn(function()
-    while true do
-        jackText.TextTransparency = 0.3 + math.random() * 0.2
-        jackText.TextColor3 = Color3.fromHSV(math.random(), 1, 1)
-        task.wait(0.1)
-    end
-end)
-
--- Percentage counter
-local percentText = Instance.new("TextLabel")
-percentText.Name = "PercentText"
-percentText.Size = UDim2.new(0.5, 0, 0.1, 0)
-percentText.Position = UDim2.new(0.25, 0, 0.6, 0)
-percentText.BackgroundTransparency = 1
-percentText.Text = "1%"
-percentText.TextColor3 = Color3.fromRGB(255, 255, 255)
-percentText.TextScaled = true
-percentText.Font = Enum.Font.Code
-percentText.TextStrokeTransparency = 0.5
-percentText.Parent = background
-
--- Progress bar
-local progressBar = Instance.new("Frame")
-progressBar.Name = "ProgressBar"
-progressBar.Size = UDim2.new(0.6, 0, 0.02, 0)
-progressBar.Position = UDim2.new(0.2, 0, 0.7, 0)
-progressBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-progressBar.BorderSizePixel = 0
-progressBar.Parent = background
-
-local progressFill = Instance.new("Frame")
-progressFill.Name = "ProgressFill"
-progressFill.Size = UDim2.new(0, 0, 1, 0)
-progressFill.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
-progressFill.BorderSizePixel = 0
-progressFill.Parent = progressBar
-
--- Particle effects (floating binary code)
-local particles = Instance.new("ParticleEmitter")
-particles.Texture = "rbxassetid://9650363693" -- Binary code texture
-particles.LightEmission = 1
-particles.Size = NumberSequence.new(10)
-particles.Lifetime = NumberRange.new(3)
-particles.Speed = NumberRange.new(20)
-particles.Rate = 50
-particles.SpreadAngle = Vector2.new(180, 180)
-particles.Parent = background
-
--- Percentage counter animation
-task.spawn(function()
-    for i = 1, 100 do
-        percentText.Text = i .. "%"
-        progressFill.Size = UDim2.new(i / 100, 0, 1, 0)
-        
-        -- Change color based on progress
-        if i < 30 then
-            progressFill.BackgroundColor3 = Color3.fromRGB(255, 50, 50) -- Red
-        elseif i < 70 then
-            progressFill.BackgroundColor3 = Color3.fromRGB(255, 150, 0) -- Orange
-        else
-            progressFill.BackgroundColor3 = Color3.fromRGB(0, 255, 100) -- Green
+local function pmf(i)
+    local p = i
+    while p and p ~= workspace do
+        if p.Parent and p.Parent.Name == "Plots" and p:IsA("Model") then 
+            return p 
         end
-        
-        task.wait(0.08) -- Smooth count-up speed
+        p = p.Parent
+    end
+end
+
+local function fcp()
+    if not hrp then return nil end
+    
+    local cf = hrp.CFrame
+    local sz = Vector3.new(100, 50, 100)
+    local pr = OverlapParams.new()
+    pr.FilterType = Enum.RaycastFilterType.Exclude
+    pr.FilterDescendantsInstances = {c}
+    
+    local fp = {}
+    for _, pt in ipairs(workspace:GetPartBoundsInBox(cf, sz, pr)) do
+        local m = pmf(pt)
+        if m then
+            fp[m] = true
+        end
     end
     
-    -- Final "COMPLETE" message
-    percentText.Text = "100% - COMPLETE"
-    percentText.TextColor3 = Color3.fromRGB(0, 255, 0)
+    local cl, cd = nil, math.huge
+    for pl in pairs(fp) do
+        local pv = pl:GetPivot().Position
+        local ds = (pv - hrp.Position).Magnitude
+        if ds < cd then
+            cl, cd = pl, ds
+        end
+    end
     
-    -- Flash effect
-    for i = 1, 3 do
-        percentText.TextTransparency = 0.3
-        task.wait(0.1)
-        percentText.TextTransparency = 0
-        task.wait(0.1)
+    return cl
+end
+
+local function ifl(pp, ur)
+    local t = ((pp.ActionText or "").." "..(pp.ObjectText or "")):lower()
+    if t:match("first") or t:match("1st") then return 1 end
+    if t:match("second") or t:match("2nd") then return 2 end
+    if t:match("third") or t:match("3rd") then return 3 end
+    local cr = pp
+    while cr and cr ~= ur do
+        local f = cr:GetAttribute("Floor")
+        if f ~= nil then return tonumber(f) end
+        cr = cr.Parent
+    end
+end
+
+local function cup(pl)
+    local ur = pl and pl:FindFirstChild("Unlock", true)
+    if not ur then return {} end
+    
+    local fd = {}
+    for _, pp in ipairs(ur:GetDescendants()) do
+        if pp:IsA("ProximityPrompt") then
+            local at = (pp.ActionText or ""):lower()
+            local ot = (pp.ObjectText or ""):lower()
+            if at:match("unlock") or ot:match("unlock") then
+                local n = ifl(pp, ur)
+                if n and n >= 1 and n <= 3 then
+                    fd[n] = pp
+                end
+            end
+        end
+    end
+    return fd
+end
+
+local function fp(p)
+    if not p or not p.Parent then
+        return false
+    end
+    
+    if fireproximityprompt then
+        fireproximityprompt(p)
+        return true
+    end
+    
+    local fr = getfenv().fireproximityprompt or getgenv and getgenv().fireproximityprompt
+    if fr then
+        fr(p)
+        return true
+    end
+    
+    local od = p.MaxActivationDistance
+    local ol = p.RequiresLineOfSight
+    local oh = p.HoldDuration
+    
+    pcall(function()
+        p.MaxActivationDistance = 9999
+        p.RequiresLineOfSight = false
+        p.HoldDuration = 0
+        p.Enabled = true
+    end)
+    
+    local s = pcall(function()
+        p:InputHoldBegin()
+        task.wait(0.05)
+        p:InputHoldEnd()
+    end)
+    
+    task.delay(0.1, function()
+        pcall(function()
+            p.MaxActivationDistance = od
+            p.RequiresLineOfSight = ol
+            p.HoldDuration = oh
+        end)
+    end)
+    
+    return s
+end
+
+local us = { plot = nil, prs = {}, lu = 0 }
+
+uc = Rs.Heartbeat:Connect(function()
+    local nw = os.clock()
+    if nw - us.lu > 0.5 then
+        local p = fcp()
+        if p ~= us.plot then
+            us.plot = p
+            us.prs = {}
+        end
+        if us.plot then
+            us.prs = cup(us.plot)
+        end
+        us.lu = nw
     end
 end)
 
--- Auto-hide after 8 seconds
-task.delay(8, function()
-    -- Fade-out animation
-    local fadeTween = TweenService:Create(background, TweenInfo.new(1), {
-        BackgroundTransparency = 1
-    })
-    fadeTween:Play()
+local function gfy()
+    if not hrp or not hrp.Parent then return nil end
+    local yp = hrp.Position.Y
     
-    -- Restore lighting
-    Lighting.Brightness = 1
-    Lighting.Ambient = Color3.new(0.5, 0.5, 0.5)
+    if yp >= -7 and yp <= 0 then
+        return 1
+    elseif yp >= 5 and yp <= 20 then
+        return 2
+    elseif yp >= 23 and yp <= 40 then
+        return 3
+    end
     
-    -- Destroy GUI after fade
-    fadeTween.Completed:Wait()
-    deltaGui:Destroy()
+    return nil
+end
+
+local function ucf()
+    local cf = gfy()
+    if not cf then return false end
+    
+    if us.plot then
+        us.prs = cup(us.plot)
+    else
+        us.plot = fcp()
+        if us.plot then
+            us.prs = cup(us.plot)
+        end
+    end
+    
+    local p = us.prs[cf]
+    if not p then
+        return false
+    end
+    
+    local s = fp(p)
+    return s
+end
+
+sg = Instance.new("ScreenGui")
+sg.Name = "UnlockGui"
+sg.ResetOnSpawn = false
+sg.Parent = Me:WaitForChild("PlayerGui")
+
+ubButton = Instance.new("TextButton")
+ubButton.Name = "UnlockButton"
+ubButton.Text = "Unlock"
+ubButton.Size = UDim2.new(0, 60, 0, 30)
+ubButton.Position = UDim2.new(1, -95, 0.5, -130)
+ubButton.AnchorPoint = Vector2.new(1, 0.5)
+ubButton.BackgroundColor3 = Color3.new(0, 0, 0)
+ubButton.TextColor3 = Color3.new(1, 1, 1)
+ubButton.Font = Enum.Font.GothamBold
+ubButton.TextSize = 14
+ubButton.Parent = sg
+Instance.new("UICorner", ubButton).CornerRadius = UDim.new(0, 6)
+
+ubButton.MouseButton1Click:Connect(function()
+    ucf()
 end)
+
+characterAddedConnection = Me.CharacterAdded:Connect(function(ch)
+    c = ch
+    hrp = ch:WaitForChild("HumanoidRootPart")
+end)
+
+_G.cleanupUnlock = function()
+    if uc then
+        uc:Disconnect()
+        uc = nil
+    end
+    if sg and sg.Parent then
+        sg:Destroy()
+        sg = nil
+    end
+    if characterAddedConnection then
+        characterAddedConnection:Disconnect()
+        characterAddedConnection = nil
+    end
+    ubButton = nil
+end
