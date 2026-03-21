@@ -1,258 +1,209 @@
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-
-local player = Players.LocalPlayer
-
-local COMMAND_DATA = {
-    ["jail"] = 60,
-    ["ragdoll"] = 30,
-    ["balloon"] = 30,
-    ["jumpscare"] = 60,
-    ["rocket"] = 120,
-    ["inverse"] = 60,
-    ["nightvision"] = 60,
-    ["tiny"] = 60,
-    ["morph"] = 60
+local Players=game:GetService("Players")
+local UserInputService=game:GetService("UserInputService")
+local CoreGui=game:GetService("CoreGui")
+local RunService=game:GetService("RunService")
+local TweenService=game:GetService("TweenService")
+local player=Players.LocalPlayer
+local COMMAND_DATA={
+["jail"]=60,["ragdoll"]=30,["balloon"]=30,["jumpscare"]=60,["rocket"]=120,["inverse"]=60,["nightvision"]=60,["tiny"]=60,["morph"]=60
 }
-
-local CMDS_ORDER = {"jail", "ragdoll", "balloon", "jumpscare", "rocket", "inverse", "nightvision", "tiny", "morph"}
-
-local Settings = {
-    Enabled = false,
-    Range = 30,
-    CheckRate = 0.5,
-    NextActionDelay = 3 
+local CMDS_ORDER={"jail","ragdoll","balloon","jumpscare","rocket","inverse","nightvision","tiny","morph"}
+local Settings={
+Enabled=false,Range=30,CheckRate=0.5,NextActionDelay=3 
 }
-
-local rangeList = {30, 40, 50, 70, 100}
-local rangeIndex = 1 
-
-local globalCooldowns = {} 
-local playerProcessing = {} 
-
+local rangeList={30,40,50,70,100}
+local rangeIndex=1 
+local globalCooldowns={} 
+local playerProcessing={} 
 local function destroyOldRing()
-    for _, v in pairs(workspace:GetDescendants()) do
-        if v:IsA("Part") and v.Name == "APRing" then
-            v:Destroy()
-        end
-    end
+for _,v in pairs(workspace:GetDescendants()) do
+if v:IsA("Part") and v.Name=="APRing" then
+v:Destroy()
 end
-
+end
+end
 destroyOldRing()
-
 local function click(btn)
-    if not btn then return end
-    pcall(function()
-        for _,c in pairs(getconnections(btn.MouseButton1Click)) do c:Fire() end
-        for _,c in pairs(getconnections(btn.Activated)) do c:Fire() end
-    end)
+if not btn then return end
+pcall(function()
+for _,c in pairs(getconnections(btn.MouseButton1Click)) do c:Fire() end
+for _,c in pairs(getconnections(btn.Activated)) do c:Fire() end
+end)
 end
-
 local function isCommandReady(cmdName)
-    local readyAt = globalCooldowns[cmdName] or 0
-    return tick() >= readyAt
+local readyAt=globalCooldowns[cmdName] or 0
+return tick() >=readyAt
 end
-
 local function getReadyCommands(amount)
-    local selected = {}
-    for _, name in ipairs(CMDS_ORDER) do
-        if #selected >= amount then break end
-        if isCommandReady(name) then
-            table.insert(selected, name)
-        end
-    end
-    return selected
+local selected={}
+for _,name in ipairs(CMDS_ORDER) do
+if #selected >=amount then break end
+if isCommandReady(name) then
+table.insert(selected,name)
 end
-
+end
+return selected
+end
 local function runSmartSequence(target)
-    if playerProcessing[target.UserId] then return end
-    playerProcessing[target.UserId] = true
-    
-    task.spawn(function()
-        local panel = player:WaitForChild("PlayerGui"):FindFirstChild("AdminPanel")
-        if not panel then playerProcessing[target.UserId] = false return end
-
-        local function executeBatch(amt)
-            local stringsToSearch = getReadyCommands(amt)
-            if #stringsToSearch == 0 then return false end
-            
-            local pBtn = nil
-            for _, d in pairs(panel:GetDescendants()) do
-                if (d:IsA("TextButton") or d:IsA("ImageButton")) and (d.Name:find(target.Name) or (d:FindFirstChildOfClass("TextLabel") and d:FindFirstChildOfClass("TextLabel").Text:find(target.Name))) then
-                    pBtn = d break
-                end
-            end
-
-            if pBtn then
-                for _, d in pairs(panel:GetDescendants()) do
-                    if d:IsA("TextButton") or d:IsA("ImageButton") then
-                        local txt = (d:IsA("TextButton") and d.Text or (d:FindFirstChildOfClass("TextLabel") and d:FindFirstChildOfClass("TextLabel").Text or "")):lower()
-                        for _, cmd in ipairs(stringsToSearch) do
-                            if txt:find(cmd) and (txt:find("^:") or txt:find("^;")) then
-                                click(pBtn)
-                                click(d)
-                                globalCooldowns[cmd] = tick() + COMMAND_DATA[cmd]
-                            end
-                        end
-                    end
-                end
-                return true
-            end
-            return false
-        end
-
-        executeBatch(3)
-        task.wait(Settings.NextActionDelay)
-
-        local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-        local tRoot = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
-        
-        if Settings.Enabled and root and tRoot and (root.Position - tRoot.Position).Magnitude <= Settings.Range then
-            executeBatch(3)
-            task.wait(Settings.NextActionDelay)
-            
-            if Settings.Enabled and root and tRoot and (root.Position - tRoot.Position).Magnitude <= Settings.Range then
-                executeBatch(1)
-            end
-        end
-
-        playerProcessing[target.UserId] = nil
-    end)
-end
-
-if CoreGui:FindFirstChild("AP_Mini") then CoreGui.AP_Mini:Destroy() end
-local sg = Instance.new("ScreenGui", CoreGui)
-sg.Name = "AP_Mini"
-sg.ResetOnSpawn = false
-
-local main = Instance.new("Frame", sg)
-main.Size = UDim2.new(0, 140, 0, 70)
-main.Position = UDim2.new(0, 20, 0.4, -35)
-main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-main.BorderSizePixel = 0
-
-local corner = Instance.new("UICorner", main)
-corner.CornerRadius = UDim.new(0, 4)
-
-local stroke = Instance.new("UIStroke", main)
-stroke.Thickness = 1
-stroke.Color = Color3.fromRGB(200, 50, 50)
-stroke.Transparency = 0.5
-
-local dragging, dragStart, startPos
-main.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = main.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - dragStart
-        main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
-
-local apLabel = Instance.new("TextLabel", main)
-apLabel.Size = UDim2.new(0.5, -5, 0, 25)
-apLabel.Position = UDim2.new(0, 8, 0, 8)
-apLabel.BackgroundTransparency = 1
-apLabel.Text = "AP spam:"
-apLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-apLabel.TextSize = 14
-apLabel.Font = Enum.Font.GothamBold
-apLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-local apToggle = Instance.new("TextButton", main)
-apToggle.Size = UDim2.new(0, 52, 0, 20)
-apToggle.Position = UDim2.new(0.5, 10, 0, 10)
-apToggle.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-apToggle.Text = "OFF"
-apToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-apToggle.TextSize = 11
-apToggle.Font = Enum.Font.GothamBold
-
-local toggleCorner = Instance.new("UICorner", apToggle)
-toggleCorner.CornerRadius = UDim.new(0, 3)
-
-local rangeLabel = Instance.new("TextLabel", main)
-rangeLabel.Size = UDim2.new(0.5, -5, 0, 25)
-rangeLabel.Position = UDim2.new(0, 8, 0, 38)
-rangeLabel.BackgroundTransparency = 1
-rangeLabel.Text = "Range:"
-rangeLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-rangeLabel.TextSize = 14
-rangeLabel.Font = Enum.Font.GothamBold
-rangeLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-local rangeValue = Instance.new("TextButton", main)
-rangeValue.Size = UDim2.new(0, 52, 0, 20)
-rangeValue.Position = UDim2.new(0.5, 10, 0, 40)
-rangeValue.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-rangeValue.Text = "30"
-rangeValue.TextColor3 = Color3.fromRGB(255, 255, 255)
-rangeValue.TextSize = 11
-rangeValue.Font = Enum.Font.GothamBold
-
-local rangeCorner = Instance.new("UICorner", rangeValue)
-rangeCorner.CornerRadius = UDim.new(0, 3)
-
-local ring = Instance.new("Part", workspace)
-ring.Name = "APRing"
-ring.Shape = Enum.PartType.Cylinder
-ring.Material = Enum.Material.Neon
-ring.Color = Color3.fromRGB(255, 0, 0)
-ring.CanCollide = false
-ring.Anchored = true
-ring.Transparency = 0.4
-
-apToggle.MouseButton1Click:Connect(function()
-    Settings.Enabled = not Settings.Enabled
-    apToggle.Text = Settings.Enabled and "ON" or "OFF"
-    apToggle.BackgroundColor3 = Settings.Enabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
-end)
-
-rangeValue.MouseButton1Click:Connect(function()
-    rangeIndex = (rangeIndex % #rangeList) + 1
-    Settings.Range = rangeList[rangeIndex]
-    rangeValue.Text = Settings.Range
-end)
-
-RunService.RenderStepped:Connect(function()
-    local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if root then
-        ring.CFrame = root.CFrame * CFrame.Angles(0, 0, math.rad(90)) + Vector3.new(0, -3.2, 0)
-        ring.Size = Vector3.new(0.1, Settings.Range * 2, Settings.Range * 2)
-        ring.Transparency = 0.4
-    else
-        ring.Transparency = 1
-    end
-end)
-
+if playerProcessing[target.UserId] then return end
+playerProcessing[target.UserId]=true
 task.spawn(function()
-    while true do
-        task.wait(Settings.CheckRate)
-        if Settings.Enabled then
-            local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            if root then
-                for _, p in pairs(Players:GetPlayers()) do
-                    if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                        if (root.Position - p.Character.HumanoidRootPart.Position).Magnitude <= Settings.Range then
-                            runSmartSequence(p)
-                        end
-                    end
-                end
-            end
-        end
-    end
+local panel=player:WaitForChild("PlayerGui"):FindFirstChild("AdminPanel")
+if not panel then playerProcessing[target.UserId]=false return end
+local function executeBatch(amt)
+local stringsToSearch=getReadyCommands(amt)
+if #stringsToSearch==0 then return false end
+local pBtn=nil
+for _,d in pairs(panel:GetDescendants()) do
+if (d:IsA("TextButton") or d:IsA("ImageButton")) and (d.Name:find(target.Name) or (d:FindFirstChildOfClass("TextLabel") and d:FindFirstChildOfClass("TextLabel").Text:find(target.Name))) then
+pBtn=d break
+end
+end
+if pBtn then
+for _,d in pairs(panel:GetDescendants()) do
+if d:IsA("TextButton") or d:IsA("ImageButton") then
+local txt=(d:IsA("TextButton") and d.Text or (d:FindFirstChildOfClass("TextLabel") and d:FindFirstChildOfClass("TextLabel").Text or "")):lower()
+for _,cmd in ipairs(stringsToSearch) do
+if txt:find(cmd) and (txt:find("^:") or txt:find("^;")) then
+click(pBtn)
+click(d)
+globalCooldowns[cmd]=tick() + COMMAND_DATA[cmd]
+end
+end
+end
+end
+return true
+end
+return false
+end
+executeBatch(3)
+task.wait(Settings.NextActionDelay)
+local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+local tRoot=target.Character and target.Character:FindFirstChild("HumanoidRootPart")
+if Settings.Enabled and root and tRoot and (root.Position - tRoot.Position).Magnitude <=Settings.Range then
+executeBatch(3)
+task.wait(Settings.NextActionDelay)
+if Settings.Enabled and root and tRoot and (root.Position - tRoot.Position).Magnitude <=Settings.Range then
+executeBatch(1)
+end
+end
+playerProcessing[target.UserId]=nil
+end)
+end
+if CoreGui:FindFirstChild("AP_Mini") then CoreGui.AP_Mini:Destroy() end
+local sg=Instance.new("ScreenGui",CoreGui)
+sg.Name="AP_Mini"
+sg.ResetOnSpawn=false
+local main=Instance.new("Frame",sg)
+main.Size=UDim2.new(0,140,0,70)
+main.Position=UDim2.new(0,20,0.4,-35)
+main.BackgroundColor3=Color3.fromRGB(15,15,15)
+main.BorderSizePixel=0
+local corner=Instance.new("UICorner",main)
+corner.CornerRadius=UDim.new(0,4)
+local stroke=Instance.new("UIStroke",main)
+stroke.Thickness=1
+stroke.Color=Color3.fromRGB(200,50,50)
+stroke.Transparency=0.5
+local dragging,dragStart,startPos
+main.InputBegan:Connect(function(input)
+if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
+dragging=true
+dragStart=input.Position
+startPos=main.Position
+input.Changed:Connect(function()
+if input.UserInputState==Enum.UserInputState.End then
+dragging=false
+end
+end)
+end
+end)
+UserInputService.InputChanged:Connect(function(input)
+if dragging and (input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch) then
+local delta=input.Position - dragStart
+main.Position=UDim2.new(startPos.X.Scale,startPos.X.Offset + delta.X,startPos.Y.Scale,startPos.Y.Offset + delta.Y)
+end
+end)
+local apLabel=Instance.new("TextLabel",main)
+apLabel.Size=UDim2.new(0.5,-5,0,25)
+apLabel.Position=UDim2.new(0,8,0,8)
+apLabel.BackgroundTransparency=1
+apLabel.Text="AP spam:"
+apLabel.TextColor3=Color3.fromRGB(200,200,200)
+apLabel.TextSize=14
+apLabel.Font=Enum.Font.GothamBold
+apLabel.TextXAlignment=Enum.TextXAlignment.Left
+local apToggle=Instance.new("TextButton",main)
+apToggle.Size=UDim2.new(0,52,0,20)
+apToggle.Position=UDim2.new(0.5,10,0,10)
+apToggle.BackgroundColor3=Color3.fromRGB(200,50,50)
+apToggle.Text="OFF"
+apToggle.TextColor3=Color3.fromRGB(255,255,255)
+apToggle.TextSize=11
+apToggle.Font=Enum.Font.GothamBold
+local toggleCorner=Instance.new("UICorner",apToggle)
+toggleCorner.CornerRadius=UDim.new(0,3)
+local rangeLabel=Instance.new("TextLabel",main)
+rangeLabel.Size=UDim2.new(0.5,-5,0,25)
+rangeLabel.Position=UDim2.new(0,8,0,38)
+rangeLabel.BackgroundTransparency=1
+rangeLabel.Text="Range:"
+rangeLabel.TextColor3=Color3.fromRGB(200,200,200)
+rangeLabel.TextSize=14
+rangeLabel.Font=Enum.Font.GothamBold
+rangeLabel.TextXAlignment=Enum.TextXAlignment.Left
+local rangeValue=Instance.new("TextButton",main)
+rangeValue.Size=UDim2.new(0,52,0,20)
+rangeValue.Position=UDim2.new(0.5,10,0,40)
+rangeValue.BackgroundColor3=Color3.fromRGB(40,40,40)
+rangeValue.Text="30"
+rangeValue.TextColor3=Color3.fromRGB(255,255,255)
+rangeValue.TextSize=11
+rangeValue.Font=Enum.Font.GothamBold
+local rangeCorner=Instance.new("UICorner",rangeValue)
+rangeCorner.CornerRadius=UDim.new(0,3)
+local ring=Instance.new("Part",workspace)
+ring.Name="APRing"
+ring.Shape=Enum.PartType.Cylinder
+ring.Material=Enum.Material.Neon
+ring.Color=Color3.fromRGB(255,0,0)
+ring.CanCollide=false
+ring.Anchored=true
+ring.Transparency=0.4
+apToggle.MouseButton1Click:Connect(function()
+Settings.Enabled=not Settings.Enabled
+apToggle.Text=Settings.Enabled and "ON" or "OFF"
+apToggle.BackgroundColor3=Settings.Enabled and Color3.fromRGB(50,200,50) or Color3.fromRGB(200,50,50)
+end)
+rangeValue.MouseButton1Click:Connect(function()
+rangeIndex=(rangeIndex % #rangeList) + 1
+Settings.Range=rangeList[rangeIndex]
+rangeValue.Text=Settings.Range
+end)
+RunService.RenderStepped:Connect(function()
+local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+if root then
+ring.CFrame=root.CFrame * CFrame.Angles(0,0,math.rad(90)) + Vector3.new(0,-3.2,0)
+ring.Size=Vector3.new(0.1,Settings.Range * 2,Settings.Range * 2)
+ring.Transparency=0.4
+else
+ring.Transparency=1
+end
+end)
+task.spawn(function()
+while true do
+task.wait(Settings.CheckRate)
+if Settings.Enabled then
+local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+if root then
+for _,p in pairs(Players:GetPlayers()) do
+if p ~=player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+if (root.Position - p.Character.HumanoidRootPart.Position).Magnitude <=Settings.Range then
+runSmartSequence(p)
+end
+end
+end
+end
+end
+end
 end)
