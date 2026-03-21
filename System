@@ -1,104 +1,84 @@
-local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
-local TweenService = game:GetService("TweenService")
-
-local player = Players.LocalPlayer
-local PlayerGui = player:WaitForChild("PlayerGui")
-
+local Players=game:GetService("Players")
+local Workspace=game:GetService("Workspace")
+local TweenService=game:GetService("TweenService")
+local player=Players.LocalPlayer
+local PlayerGui=player:WaitForChild("PlayerGui")
 local function limpiarCharacter(char)
-	if not char then return end
-	for _, obj in ipairs(char:GetChildren()) do
-		if obj:IsA("Accessory")
-		or obj:IsA("Shirt")
-		or obj:IsA("Pants")
-		or obj:IsA("ShirtGraphic")
-		or obj:IsA("BodyColors")
-		or obj:IsA("CharacterMesh")
-		or obj:IsA("Hat") then
-			obj:Destroy()
-		end
-	end
+if not char then return end
+for _,obj in ipairs(char:GetChildren()) do
+if obj:IsA("Accessory")
+or obj:IsA("Shirt")
+or obj:IsA("Pants")
+or obj:IsA("ShirtGraphic")
+or obj:IsA("BodyColors")
+or obj:IsA("CharacterMesh")
+or obj:IsA("Hat") then
+obj:Destroy()
 end
-
+end
+end
 local function limpiarTodos()
-	for _, hum in ipairs(Workspace:GetDescendants()) do
-		if hum:IsA("Humanoid") and hum.Parent then
-			limpiarCharacter(hum.Parent)
-		end
-	end
+for _,hum in ipairs(Workspace:GetDescendants()) do
+if hum:IsA("Humanoid") and hum.Parent then
+limpiarCharacter(hum.Parent)
 end
-
+end
+end
 local function limpiezaRapidaAsync()
-	task.spawn(function()
-		local start = os.clock()
-		while os.clock() - start < 2 do
-			limpiarTodos()
-			task.wait(0.3)
-		end
-	end)
-end
-
-local function ejecutarFpsKiller()
-	limpiezaRapidaAsync()
-
-	local character = player.Character or player.CharacterAdded:Wait()
-	local humanoid = character:WaitForChild("Humanoid")
-	local backpack = player:WaitForChild("Backpack")
-	local qc = backpack:FindFirstChild("Quantum Cloner")
-
-	if qc then
-		humanoid:EquipTool(qc)
-
-		for _, tool in ipairs(backpack:GetChildren()) do
-			if tool:IsA("Tool") and tool ~= qc then
-				tool.Parent = character
-			end
-		end
-
-		task.wait(0.05)
-		qc:Activate()
-
-		task.wait(0.1)
-		humanoid:UnequipTools()
-	end
-end
-
-local function brilloRojo(obj)
-	obj.TextStrokeColor3 = Color3.fromRGB(255, 60, 60)
-	obj.TextStrokeTransparency = 0.2
-
-	local tween = TweenService:Create(
-		obj,
-		TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
-		{TextStrokeTransparency = 0.75}
-	)
-
-	tween:Play()
-end
-
-local gui = Instance.new("ScreenGui")
-gui.Name = "kk"
-gui.ResetOnSpawn = false
-gui.Parent = PlayerGui
-
-local btn = Instance.new("TextButton")
-btn.Size = UDim2.fromOffset(80, 30)
-btn.Position = UDim2.new(1, -90, 0, 30)
-btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-btn.BorderSizePixel = 0
-btn.Text = "fps killer"
-btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-btn.Font = Enum.Font.GothamBlack
-btn.TextSize = 12
-btn.Parent = gui
-
-Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-
 task.spawn(function()
-	while true do
-		limpiarTodos()
-		task.wait(5)
-	end
+local start=os.clock()
+while os.clock() - start < 2 do
+limpiarTodos()
+task.wait(0.3)
+end
 end)
-
+end
+local function ejecutarFpsKiller()
+limpiezaRapidaAsync()
+local character=player.Character or player.CharacterAdded:Wait()
+local humanoid=character:WaitForChild("Humanoid")
+local backpack=player:WaitForChild("Backpack")
+local qc=backpack:FindFirstChild("Quantum Cloner")
+if qc then
+humanoid:EquipTool(qc)
+for _,tool in ipairs(backpack:GetChildren()) do
+if tool:IsA("Tool") and tool ~=qc then
+tool.Parent=character
+end
+end
+task.wait(0.05)
+qc:Activate()
+task.wait(0.1)
+humanoid:UnequipTools()
+end
+end
+local function brilloRojo(obj)
+obj.TextStrokeColor3=Color3.fromRGB(255,60,60)
+obj.TextStrokeTransparency=0.2
+local tween=TweenService:Create(
+obj,TweenInfo.new(0.8,Enum.EasingStyle.Sine,Enum.EasingDirection.InOut,-1,true),{TextStrokeTransparency=0.75}
+)
+tween:Play()
+end
+local gui=Instance.new("ScreenGui")
+gui.Name="kk"
+gui.ResetOnSpawn=false
+gui.Parent=PlayerGui
+local btn=Instance.new("TextButton")
+btn.Size=UDim2.fromOffset(80,30)
+btn.Position=UDim2.new(1,-90,0,30)
+btn.BackgroundColor3=Color3.fromRGB(0,0,0)
+btn.BorderSizePixel=0
+btn.Text="fps killer"
+btn.TextColor3=Color3.fromRGB(255,255,255)
+btn.Font=Enum.Font.GothamBlack
+btn.TextSize=12
+btn.Parent=gui
+Instance.new("UICorner",btn).CornerRadius=UDim.new(0,6)
+task.spawn(function()
+while true do
+limpiarTodos()
+task.wait(5)
+end
+end)
 btn.MouseButton1Click:Connect(ejecutarFpsKiller)
