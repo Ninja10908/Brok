@@ -1,283 +1,241 @@
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
-
-local player = Players.LocalPlayer
-
+local Players=game:GetService("Players")
+local TweenService=game:GetService("TweenService")
+local UserInputService=game:GetService("UserInputService")
+local CoreGui=game:GetService("CoreGui")
+local player=Players.LocalPlayer
 if CoreGui:FindFirstChild("APSpammer") then CoreGui["APSpammer"]:Destroy() end
-
 local function tw(o,i,p) TweenService:Create(o,i,p):Play() end
-
 local function findAdminPanel()
-    return player:WaitForChild("PlayerGui"):FindFirstChild("AdminPanel")
+return player:WaitForChild("PlayerGui"):FindFirstChild("AdminPanel")
 end
-
 local function clickButton(button)
-    pcall(function()
-        for _, c in pairs(getconnections(button.MouseButton1Click)) do c:Fire() end
-        for _, c in pairs(getconnections(button.Activated)) do c:Fire() end
-    end)
+pcall(function()
+for _,c in pairs(getconnections(button.MouseButton1Click)) do c:Fire() end
+for _,c in pairs(getconnections(button.Activated)) do c:Fire() end
+end)
 end
-
 local function findPlayerButton(targetPlayer)
-    local adminPanel = findAdminPanel()
-    if not adminPanel then return nil end
-    for _, d in pairs(adminPanel:GetDescendants()) do
-        if d:IsA("TextButton") or d:IsA("ImageButton") then
-            local txt = d:IsA("TextButton") and d.Text or ""
-            if txt == "" then
-                for _, child in pairs(d:GetDescendants()) do
-                    if child:IsA("TextLabel") then txt = child.Text break end
-                end
-            end
-            if txt == targetPlayer.DisplayName or txt == targetPlayer.Name or txt:find(targetPlayer.DisplayName) or txt:find(targetPlayer.Name) then
-                return d
-            end
-        end
-    end
-    return nil
+local adminPanel=findAdminPanel()
+if not adminPanel then return nil end
+for _,d in pairs(adminPanel:GetDescendants()) do
+if d:IsA("TextButton") or d:IsA("ImageButton") then
+local txt=d:IsA("TextButton") and d.Text or ""
+if txt=="" then
+for _,child in pairs(d:GetDescendants()) do
+if child:IsA("TextLabel") then txt=child.Text break end
 end
-
+end
+if txt==targetPlayer.DisplayName or txt==targetPlayer.Name or txt:find(targetPlayer.DisplayName) or txt:find(targetPlayer.Name) then
+return d
+end
+end
+end
+return nil
+end
 local function getCommandButtons()
-    local buttons = {}
-    local adminPanel = findAdminPanel()
-    if not adminPanel then return buttons end
-    for _, d in pairs(adminPanel:GetDescendants()) do
-        if d:IsA("TextButton") or d:IsA("ImageButton") then
-            local txt = d:IsA("TextButton") and d.Text or ""
-            if txt == "" then
-                for _, child in pairs(d:GetDescendants()) do
-                    if child:IsA("TextLabel") and child.Text ~= "" then txt = child.Text break end
-                end
-            end
-            if txt and txt ~= "" and (txt:match("^:") or txt:match("^;")) then
-                table.insert(buttons,{button=d,name=txt:lower()})
-            end
-        end
-    end
-    return buttons
+local buttons={}
+local adminPanel=findAdminPanel()
+if not adminPanel then return buttons end
+for _,d in pairs(adminPanel:GetDescendants()) do
+if d:IsA("TextButton") or d:IsA("ImageButton") then
+local txt=d:IsA("TextButton") and d.Text or ""
+if txt=="" then
+for _,child in pairs(d:GetDescendants()) do
+if child:IsA("TextLabel") and child.Text ~="" then txt=child.Text break end
 end
-
-local CMDS = {"rocket","morph","inverse","ragdoll","balloon","nightvision","jumpscare","jail","tiny"}
-
+end
+if txt and txt ~="" and (txt:match("^:") or txt:match("^;")) then
+table.insert(buttons,{button=d,name=txt:lower()})
+end
+end
+end
+return buttons
+end
+local CMDS={"rocket","morph","inverse","ragdoll","balloon","nightvision","jumpscare","jail","tiny"}
 local function spamPlayer(targetPlayer)
-    task.spawn(function()
-        local adminPanel = findAdminPanel()
-        if not adminPanel then return end
-
-        local cmdButtons = getCommandButtons()
-        local playerBtn = findPlayerButton(targetPlayer)
-        if not playerBtn then return end
-
-        local toExec = {}
-        for _, cb in pairs(cmdButtons) do
-            for _, cmd in ipairs(CMDS) do
-                if cb.name:find(cmd) then
-                    table.insert(toExec, cb)
-                    break
-                end
-            end
-        end
-
-        for _, cb in ipairs(toExec) do
-            clickButton(playerBtn)
-            clickButton(cb.button)
-        end
-    end)
+task.spawn(function()
+local adminPanel=findAdminPanel()
+if not adminPanel then return end
+local cmdButtons=getCommandButtons()
+local playerBtn=findPlayerButton(targetPlayer)
+if not playerBtn then return end
+local toExec={}
+for _,cb in pairs(cmdButtons) do
+for _,cmd in ipairs(CMDS) do
+if cb.name:find(cmd) then
+table.insert(toExec,cb)
+break
 end
-
-local sg = Instance.new("ScreenGui")
-sg.Name = "APSpammer"
-sg.ResetOnSpawn = false
-sg.DisplayOrder = 999
-sg.Parent = CoreGui
-
-local main = Instance.new("Frame", sg)
-main.Size = UDim2.new(0,150,0,28) -- Smaller width and height
-main.Position = UDim2.new(0.5,-50,0,-30)
-main.BackgroundColor3 = Color3.fromRGB(10,10,10)
-main.BorderSizePixel = 0
-main.ClipsDescendants = true
-Instance.new("UICorner",main).CornerRadius = UDim.new(0,6)
-
-local header = Instance.new("TextButton",main)
-header.Size = UDim2.new(1,0,0,28) -- Smaller height
-header.BackgroundColor3 = Color3.fromRGB(15,15,15)
-header.BorderSizePixel = 0
-header.Text = ""
-header.AutoButtonColor = false
-Instance.new("UICorner",header).CornerRadius = UDim.new(0,6)
-
-local title = Instance.new("TextLabel",header)
-title.Size = UDim2.new(1,-20,1,0)
-title.Position = UDim2.new(0,8,0,0) -- Adjusted padding
-title.BackgroundTransparency = 1
-title.Text = "Jack's AP Spammer"
-title.TextColor3 = Color3.fromRGB(255,255,255)
-title.TextSize = 11 -- Smaller text
-title.Font = Enum.Font.GothamBold
-title.TextXAlignment = Enum.TextXAlignment.Left
-
-local arrow = Instance.new("TextLabel",header)
-arrow.Size = UDim2.new(0,16,1,0) -- Smaller arrow
-arrow.Position = UDim2.new(1,-16,0,0)
-arrow.BackgroundTransparency = 1
-arrow.Text = "▼"
-arrow.TextColor3 = Color3.fromRGB(150,150,150)
-arrow.TextSize = 9 -- Smaller text
-arrow.Font = Enum.Font.GothamBold
-
-local container = Instance.new("Frame",main)
-container.Size = UDim2.new(1,0,0,0)
-container.Position = UDim2.new(0,0,0,28) -- Adjusted position
-container.BackgroundColor3 = Color3.fromRGB(10,10,10)
-container.BorderSizePixel = 0
-container.ClipsDescendants = true
-Instance.new("UICorner",container).CornerRadius = UDim.new(0,6)
-
-local playerList = Instance.new("ScrollingFrame",container)
-playerList.Size = UDim2.new(1,0,1,0)
-playerList.BackgroundTransparency = 1
-playerList.BorderSizePixel = 0
-playerList.ScrollBarThickness = 3
-playerList.CanvasSize = UDim2.new(0,0,0,0)
-
-local UIList = Instance.new("UIListLayout",playerList)
-UIList.Padding = UDim.new(0,2)
-UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
-UIList.SortOrder = Enum.SortOrder.LayoutOrder
-
+end
+end
+for _,cb in ipairs(toExec) do
+clickButton(playerBtn)
+clickButton(cb.button)
+end
+end)
+end
+local sg=Instance.new("ScreenGui")
+sg.Name="APSpammer"
+sg.ResetOnSpawn=false
+sg.DisplayOrder=999
+sg.Parent=CoreGui
+local main=Instance.new("Frame",sg)
+main.Size=UDim2.new(0,150,0,28) -- Smaller width and height
+main.Position=UDim2.new(0.5,-50,0,-30)
+main.BackgroundColor3=Color3.fromRGB(10,10,10)
+main.BorderSizePixel=0
+main.ClipsDescendants=true
+Instance.new("UICorner",main).CornerRadius=UDim.new(0,6)
+local header=Instance.new("TextButton",main)
+header.Size=UDim2.new(1,0,0,28) -- Smaller height
+header.BackgroundColor3=Color3.fromRGB(15,15,15)
+header.BorderSizePixel=0
+header.Text=""
+header.AutoButtonColor=false
+Instance.new("UICorner",header).CornerRadius=UDim.new(0,6)
+local title=Instance.new("TextLabel",header)
+title.Size=UDim2.new(1,-20,1,0)
+title.Position=UDim2.new(0,8,0,0) -- Adjusted padding
+title.BackgroundTransparency=1
+title.Text="Jack's AP Spammer"
+title.TextColor3=Color3.fromRGB(255,255,255)
+title.TextSize=11 -- Smaller text
+title.Font=Enum.Font.GothamBold
+title.TextXAlignment=Enum.TextXAlignment.Left
+local arrow=Instance.new("TextLabel",header)
+arrow.Size=UDim2.new(0,16,1,0) -- Smaller arrow
+arrow.Position=UDim2.new(1,-16,0,0)
+arrow.BackgroundTransparency=1
+arrow.Text="▼"
+arrow.TextColor3=Color3.fromRGB(150,150,150)
+arrow.TextSize=9 -- Smaller text
+arrow.Font=Enum.Font.GothamBold
+local container=Instance.new("Frame",main)
+container.Size=UDim2.new(1,0,0,0)
+container.Position=UDim2.new(0,0,0,28) -- Adjusted position
+container.BackgroundColor3=Color3.fromRGB(10,10,10)
+container.BorderSizePixel=0
+container.ClipsDescendants=true
+Instance.new("UICorner",container).CornerRadius=UDim.new(0,6)
+local playerList=Instance.new("ScrollingFrame",container)
+playerList.Size=UDim2.new(1,0,1,0)
+playerList.BackgroundTransparency=1
+playerList.BorderSizePixel=0
+playerList.ScrollBarThickness=3
+playerList.CanvasSize=UDim2.new(0,0,0,0)
+local UIList=Instance.new("UIListLayout",playerList)
+UIList.Padding=UDim.new(0,2)
+UIList.HorizontalAlignment=Enum.HorizontalAlignment.Center
+UIList.SortOrder=Enum.SortOrder.LayoutOrder
 -- DRAG (PC + MOBILE)
 local dragging=false
 local dragInput
 local dragStart
 local startPos
-
 header.InputBegan:Connect(function(input)
-    if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
-        dragging=true
-        dragStart=input.Position
-        startPos=main.Position
-
-        input.Changed:Connect(function()
-            if input.UserInputState==Enum.UserInputState.End then
-                dragging=false
-            end
-        end)
-    end
+if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
+dragging=true
+dragStart=input.Position
+startPos=main.Position
+input.Changed:Connect(function()
+if input.UserInputState==Enum.UserInputState.End then
+dragging=false
+end
 end)
-
+end
+end)
 header.InputChanged:Connect(function(input)
-    if input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch then
-        dragInput=input
-    end
+if input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch then
+dragInput=input
+end
 end)
-
 UserInputService.InputChanged:Connect(function(input)
-    if input==dragInput and dragging then
-        local delta=input.Position-dragStart
-        main.Position=UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset+delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset+delta.Y
-        )
-    end
+if input==dragInput and dragging then
+local delta=input.Position-dragStart
+main.Position=UDim2.new(
+startPos.X.Scale,startPos.X.Offset+delta.X,startPos.Y.Scale,startPos.Y.Offset+delta.Y
+)
+end
 end)
-
 local minimized=true
 local function toggle()
-    minimized=not minimized
-    if minimized then
-        arrow.Text="▼"
-        container.Size=UDim2.new(1,0,0,0)
-        main.Size=UDim2.new(0,150,0,28)
-    else
-        arrow.Text="▲"
-        local playerCount=#Players:GetPlayers()-1
-        local height=math.min(playerCount*36,250) -- Smaller player item height
-        container.Size=UDim2.new(1,0,0,height)
-        main.Size=UDim2.new(0,150,0,28+height)
-    end
+minimized=not minimized
+if minimized then
+arrow.Text="▼"
+container.Size=UDim2.new(1,0,0,0)
+main.Size=UDim2.new(0,150,0,28)
+else
+arrow.Text="▲"
+local playerCount=#Players:GetPlayers()-1
+local height=math.min(playerCount*36,250) -- Smaller player item height
+container.Size=UDim2.new(1,0,0,height)
+main.Size=UDim2.new(0,150,0,28+height)
 end
-
+end
 header.MouseButton1Click:Connect(toggle)
-
 local function updatePlayerList()
-    for _,v in pairs(playerList:GetChildren()) do
-        if v:IsA("TextButton") then v:Destroy() end
-    end
-
-    local players={}
-    for _,p in pairs(Players:GetPlayers()) do
-        if p~=player then table.insert(players,p) end
-    end
-
-    for _,p in pairs(players) do
-        local btn=Instance.new("TextButton",playerList)
-        btn.Size=UDim2.new(1,-8,0,34) -- Smaller button height
-        btn.BackgroundColor3=Color3.fromRGB(20,20,20)
-        btn.BorderSizePixel=0
-        btn.Text=""
-        btn.AutoButtonColor=false
-        Instance.new("UICorner",btn).CornerRadius=UDim.new(0,4)
-
-        local avatar=Instance.new("ImageLabel",btn)
-        avatar.Size=UDim2.new(0,24,0,24) -- Smaller avatar
-        avatar.Position=UDim2.new(0,5,0.5,-12)
-        avatar.BackgroundColor3=Color3.fromRGB(30,30,30)
-        avatar.Image="rbxthumb://type=AvatarHeadShot&id="..p.UserId.."&w=48&h=48"
-        avatar.BorderSizePixel=0
-        Instance.new("UICorner",avatar).CornerRadius=UDim.new(1,0)
-
-        local name=Instance.new("TextLabel",btn)
-        name.Size=UDim2.new(1,-35,0,14) -- Smaller text area
-        name.Position=UDim2.new(0,34,0,4)
-        name.BackgroundTransparency=1
-        name.Text=p.Name
-        name.TextColor3=Color3.fromRGB(255,255,255)
-        name.TextSize=11 -- Smaller text
-        name.Font=Enum.Font.GothamBold
-        name.TextXAlignment=Enum.TextXAlignment.Left
-
-        local display=Instance.new("TextLabel",btn)
-        display.Size=UDim2.new(1,-35,0,12) -- Smaller text area
-        display.Position=UDim2.new(0,34,0,18)
-        display.BackgroundTransparency=1
-        display.Text=p.DisplayName
-        display.TextColor3=Color3.fromRGB(150,150,150)
-        display.TextSize=9 -- Smaller text
-        display.Font=Enum.Font.Gotham
-        display.TextXAlignment=Enum.TextXAlignment.Left
-
-        btn.MouseEnter:Connect(function()
-            tw(btn,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(30,30,30)})
-        end)
-
-        btn.MouseLeave:Connect(function()
-            tw(btn,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(20,20,20)})
-        end)
-
-        local target=p
-        btn.MouseButton1Click:Connect(function()
-            tw(btn,TweenInfo.new(0.05),{BackgroundColor3=Color3.fromRGB(45,45,45)})
-            task.delay(0.1,function()
-                tw(btn,TweenInfo.new(0.2),{BackgroundColor3=Color3.fromRGB(20,20,20)})
-            end)
-            spamPlayer(target)
-        end)
-    end
-
-    playerList.CanvasSize=UDim2.new(0,0,0,#players*36)
-
-    if not minimized then
-        local height=math.min(#players*36,250)
-        container.Size=UDim2.new(1,0,0,height)
-        main.Size=UDim2.new(0,150,0,28+height)
-    end
+for _,v in pairs(playerList:GetChildren()) do
+if v:IsA("TextButton") then v:Destroy() end
 end
-
+local players={}
+for _,p in pairs(Players:GetPlayers()) do
+if p~=player then table.insert(players,p) end
+end
+for _,p in pairs(players) do
+local btn=Instance.new("TextButton",playerList)
+btn.Size=UDim2.new(1,-8,0,34) -- Smaller button height
+btn.BackgroundColor3=Color3.fromRGB(20,20,20)
+btn.BorderSizePixel=0
+btn.Text=""
+btn.AutoButtonColor=false
+Instance.new("UICorner",btn).CornerRadius=UDim.new(0,4)
+local avatar=Instance.new("ImageLabel",btn)
+avatar.Size=UDim2.new(0,24,0,24) -- Smaller avatar
+avatar.Position=UDim2.new(0,5,0.5,-12)
+avatar.BackgroundColor3=Color3.fromRGB(30,30,30)
+avatar.Image="rbxthumb://type=AvatarHeadShot&id="..p.UserId.."&w=48&h=48"
+avatar.BorderSizePixel=0
+Instance.new("UICorner",avatar).CornerRadius=UDim.new(1,0)
+local name=Instance.new("TextLabel",btn)
+name.Size=UDim2.new(1,-35,0,14) -- Smaller text area
+name.Position=UDim2.new(0,34,0,4)
+name.BackgroundTransparency=1
+name.Text=p.Name
+name.TextColor3=Color3.fromRGB(255,255,255)
+name.TextSize=11 -- Smaller text
+name.Font=Enum.Font.GothamBold
+name.TextXAlignment=Enum.TextXAlignment.Left
+local display=Instance.new("TextLabel",btn)
+display.Size=UDim2.new(1,-35,0,12) -- Smaller text area
+display.Position=UDim2.new(0,34,0,18)
+display.BackgroundTransparency=1
+display.Text=p.DisplayName
+display.TextColor3=Color3.fromRGB(150,150,150)
+display.TextSize=9 -- Smaller text
+display.Font=Enum.Font.Gotham
+display.TextXAlignment=Enum.TextXAlignment.Left
+btn.MouseEnter:Connect(function()
+tw(btn,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(30,30,30)})
+end)
+btn.MouseLeave:Connect(function()
+tw(btn,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(20,20,20)})
+end)
+local target=p
+btn.MouseButton1Click:Connect(function()
+tw(btn,TweenInfo.new(0.05),{BackgroundColor3=Color3.fromRGB(45,45,45)})
+task.delay(0.1,function()
+tw(btn,TweenInfo.new(0.2),{BackgroundColor3=Color3.fromRGB(20,20,20)})
+end)
+spamPlayer(target)
+end)
+end
+playerList.CanvasSize=UDim2.new(0,0,0,#players*36)
+if not minimized then
+local height=math.min(#players*36,250)
+container.Size=UDim2.new(1,0,0,height)
+main.Size=UDim2.new(0,150,0,28+height)
+end
+end
 updatePlayerList()
 Players.PlayerAdded:Connect(updatePlayerList)
 Players.PlayerRemoving:Connect(updatePlayerList)
