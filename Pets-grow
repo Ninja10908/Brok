@@ -32,216 +32,129 @@ local UserInputService=game:GetService("UserInputService")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local TweenService=game:GetService("TweenService")
 local Workspace=game:GetService("Workspace")
+if _G.Kurdhub_V2_Running then
+if _G.Kurdhub_V2_Connection then
+_G.Kurdhub_V2_Connection:Disconnect()
+end
+if _G.Kurdhub_V2_Heartbeat then
+_G.Kurdhub_V2_Heartbeat:Disconnect()
+end
+for _,conn in ipairs(_G.Kurdhub_V2_ScannerConnections or {}) do
+pcall(function() conn:Disconnect() end)
+end
+if _G.Kurdhub_V2_ScreenGui then
+_G.Kurdhub_V2_ScreenGui:Destroy()
+end
+_G.Kurdhub_V2_Running=nil
+_G.Kurdhub_V2_Connection=nil
+_G.Kurdhub_V2_Heartbeat=nil
+_G.Kurdhub_V2_ScannerConnections=nil
+_G.Kurdhub_V2_ScreenGui=nil
+task.wait(0.1)
+end
+_G.Kurdhub_V2_Running=true
+_G.Kurdhub_V2_ScannerConnections={}
 local LocalPlayer=Players.LocalPlayer
 local PlayerGui=LocalPlayer:WaitForChild("PlayerGui")
-local Theme={
-Background=Color3.fromRGB(20,10,10),Surface=Color3.fromRGB(30,15,15),SurfaceHighlight=Color3.fromRGB(45,20,20),Accent1=Color3.fromRGB(220,50,50),Accent2=Color3.fromRGB(180,40,40),TextPrimary=Color3.fromRGB(255,240,240),TextSecondary=Color3.fromRGB(200,150,150),Success=Color3.fromRGB(220,60,60),Error=Color3.fromRGB(255,80,80),}
+local function getInternalTable()
+local Packages=ReplicatedStorage:FindFirstChild("Packages")
+if not Packages then return nil end
+local SynchronizerModule=Packages:FindFirstChild("Synchronizer")
+if not SynchronizerModule then return nil end
+local success,synchronizer=pcall(require,SynchronizerModule)
+if not success or not synchronizer then return nil end
+local GetMethod=synchronizer.Get
+if type(GetMethod) ~="function" then return nil end
+for i=1,3 do
+local success,upvalue=pcall(getupvalue,GetMethod,i)
+if success and type(upvalue)=="table" then
+if upvalue.___private or upvalue.___channels or upvalue.___data then return upvalue end
+for k,v in pairs(upvalue) do
+if type(k)=="string" and k:match("^Plot_") or type(v)=="table" then return upvalue end
+end
+end
+end
+local success,env=pcall(getfenv,GetMethod)
+if success and env and env.self then return env.self end
+return nil
+end
+local SynchronizerInternal={_cache={},_dataTable=nil}
+task.spawn(function()
+local attempts=0
+while attempts < 10 and not SynchronizerInternal._dataTable do
+SynchronizerInternal._dataTable=getInternalTable()
+if not SynchronizerInternal._dataTable then
+task.wait(1)
+attempts=attempts + 1
+end
+end
+end)
+local function stealthGet(plotName)
+if not plotName or type(plotName) ~="string" then return nil end
+if SynchronizerInternal._cache[plotName]==false then return nil end
+if SynchronizerInternal._dataTable then
+local keys={plotName,"Plot_" .. plotName,"Plot" .. plotName,plotName .. "_Channel","Channel_" .. plotName}
+for _,key in ipairs(keys) do
+if SynchronizerInternal._dataTable[key] then
+SynchronizerInternal._cache[plotName]=SynchronizerInternal._dataTable[key]
+return SynchronizerInternal._dataTable[key]
+end
+end
+for k,v in pairs(SynchronizerInternal._dataTable) do
+if type(k)=="string" and (k==plotName or k:find(plotName,1,true)) then
+if type(v)=="table" then
+SynchronizerInternal._cache[plotName]=v
+return v
+end
+end
+end
+end
+SynchronizerInternal._cache[plotName]=false
+return nil
+end
+local function stealthGetProperty(channel,property)
+if not channel or type(channel) ~="table" then return nil end
+if channel[property] then return channel[property] end
+if type(channel.Get)=="function" then
+local success,result=pcall(channel.Get,channel,property)
+if success then return result end
+end
+local altNames={Owner={"owner","Owner","plotOwner","PlotOwner"},AnimalList={"animalList","AnimalList","animals","Animals","pets"}}
+if altNames[property] then
+for _,alt in ipairs(altNames[property]) do
+if channel[alt] then return channel[alt] end
+end
+end
+return nil
+end
+local autoStealEnabled=true
+local selectedTargetIndex=1
+local currentStealProgress=0
+local isCurrentlyStealing=false
+local dragging=false
+local dragInput=nil
+local dragStart=nil
+local startPos=nil
 local Packages=ReplicatedStorage:WaitForChild("Packages")
 local Datas=ReplicatedStorage:WaitForChild("Datas")
 local Shared=ReplicatedStorage:WaitForChild("Shared")
 local Utils=ReplicatedStorage:WaitForChild("Utils")
-local Synchronizer=require(Packages:WaitForChild("Synchronizer"))
-local AnimalsData=require(Datas:WaitForChild("Animals"))
-local AnimalsShared=require(Shared:WaitForChild("Animals"))
-local NumberUtils=require(Utils:WaitForChild("NumberUtils"))
-local screenGui=Instance.new("ScreenGui")
-screenGui.Name="AutoStealUI"
-screenGui.ResetOnSpawn=false
-screenGui.Parent=PlayerGui
-local frame=Instance.new("Frame")
-frame.Size=UDim2.new(0,180,0,200)
-frame.Position=UDim2.new(0,170,0,10)
-frame.BackgroundColor3=Theme.Background
-frame.BackgroundTransparency=0.05
-frame.BorderSizePixel=0
-frame.ClipsDescendants=true
-frame.Parent=screenGui
-Instance.new("UICorner",frame).CornerRadius=UDim.new(0,6)
-local mainStroke=Instance.new("UIStroke",frame)
-mainStroke.Color=Theme.Accent2
-mainStroke.Thickness=1.5
-mainStroke.Transparency=0.3
-local header=Instance.new("Frame",frame)
-header.Size=UDim2.new(1,0,0,28)
-header.BackgroundTransparency=1
-local titleLabel=Instance.new("TextLabel",header)
-titleLabel.Size=UDim2.new(0.8,0,1,0)
-titleLabel.Position=UDim2.new(0,6,0,0)
-titleLabel.BackgroundTransparency=1
-titleLabel.Text="⚡ AUTO STEAL"
-titleLabel.Font=Enum.Font.GothamBlack
-titleLabel.TextSize=10
-titleLabel.TextColor3=Theme.TextPrimary
-titleLabel.TextXAlignment=Enum.TextXAlignment.Left
-local toggleIndicator=Instance.new("Frame",header)
-toggleIndicator.Size=UDim2.new(0,10,0,10)
-toggleIndicator.Position=UDim2.new(1,-16,0,9)
-toggleIndicator.BackgroundColor3=Theme.Success
-toggleIndicator.BorderSizePixel=0
-Instance.new("UICorner",toggleIndicator).CornerRadius=UDim.new(1,0)
-do
-local dragging,dragInput,dragStart,startPos
-header.InputBegan:Connect(function(input)
-if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
-dragging=true
-dragStart=input.Position
-startPos=frame.Position
-input.Changed:Connect(function()
-if input.UserInputState==Enum.UserInputState.End then
-dragging=false
+local AnimalsData,AnimalsShared,NumberUtils
+task.spawn(function()
+for i=1,3 do
+local success1,data=pcall(require,Datas:WaitForChild("Animals"))
+local success2,shared=pcall(require,Shared:WaitForChild("Animals"))
+local success3,utils=pcall(require,Utils:WaitForChild("NumberUtils"))
+if success1 and data then AnimalsData=data end
+if success2 and shared then AnimalsShared=shared end
+if success3 and utils then NumberUtils=utils end
+if AnimalsData and AnimalsShared and NumberUtils then break end
+task.wait(0.5)
 end
 end)
-end
-end)
-header.InputChanged:Connect(function(input)
-if input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch then
-dragInput=input
-end
-end)
-UserInputService.InputChanged:Connect(function(input)
-if input==dragInput and dragging then
-local delta=input.Position - dragStart
-frame.Position=UDim2.new(
-startPos.X.Scale,startPos.X.Offset + delta.X,startPos.Y.Scale,startPos.Y.Offset + delta.Y
-)
-end
-end)
-end
-local targetPanel=Instance.new("Frame",frame)
-targetPanel.Size=UDim2.new(1,-12,0,38)
-targetPanel.Position=UDim2.new(0,6,0,32)
-targetPanel.BackgroundColor3=Theme.Surface
-targetPanel.BorderSizePixel=0
-Instance.new("UICorner",targetPanel).CornerRadius=UDim.new(0,5)
-local targetHeader=Instance.new("TextLabel",targetPanel)
-targetHeader.Size=UDim2.new(1,-12,0,10)
-targetHeader.Position=UDim2.new(0,6,0,3)
-targetHeader.BackgroundTransparency=1
-targetHeader.Text="TARGET"
-targetHeader.Font=Enum.Font.GothamBold
-targetHeader.TextSize=7
-targetHeader.TextColor3=Theme.TextSecondary
-targetHeader.TextXAlignment=Enum.TextXAlignment.Left
-local targetLabel=Instance.new("TextLabel",targetPanel)
-targetLabel.Size=UDim2.new(1,-12,0,16)
-targetLabel.Position=UDim2.new(0,6,0,16)
-targetLabel.BackgroundTransparency=1
-targetLabel.Font=Enum.Font.GothamBold
-targetLabel.TextSize=10
-targetLabel.TextColor3=Theme.TextPrimary
-targetLabel.TextXAlignment=Enum.TextXAlignment.Left
-targetLabel.TextTruncate=Enum.TextTruncate.AtEnd
-targetLabel.Text="Searching..."
-local progressBg=Instance.new("Frame",targetPanel)
-progressBg.Size=UDim2.new(1,0,0,2)
-progressBg.Position=UDim2.new(0,0,1,-2)
-progressBg.BackgroundColor3=Color3.fromRGB(30,15,15)
-progressBg.BorderSizePixel=0
-local progressBarFill=Instance.new("Frame",progressBg)
-progressBarFill.Size=UDim2.new(0,0,1,0)
-progressBarFill.BackgroundColor3=Theme.Accent1
-progressBarFill.BorderSizePixel=0
-local selectLabel=Instance.new("TextLabel",frame)
-selectLabel.Size=UDim2.new(0.6,0,0,12)
-selectLabel.Position=UDim2.new(0,6,0,74)
-selectLabel.BackgroundTransparency=1
-selectLabel.Text="📋 AVAILABLE"
-selectLabel.Font=Enum.Font.GothamBold
-selectLabel.TextSize=8
-selectLabel.TextColor3=Theme.TextSecondary
-selectLabel.TextXAlignment=Enum.TextXAlignment.Left
-local listFrame=Instance.new("ScrollingFrame",frame)
-listFrame.Size=UDim2.new(1,-12,1,-108)
-listFrame.Position=UDim2.new(0,6,0,88)
-listFrame.BackgroundTransparency=1
-listFrame.BorderSizePixel=0
-listFrame.ScrollingDirection=Enum.ScrollingDirection.Y
-listFrame.ScrollBarImageTransparency=1
-listFrame.ScrollBarThickness=0
-local uiListLayout=Instance.new("UIListLayout",listFrame)
-uiListLayout.Padding=UDim.new(0,3)
-uiListLayout.SortOrder=Enum.SortOrder.LayoutOrder
-local toggleBtnContainer=Instance.new("Frame",frame)
-toggleBtnContainer.Size=UDim2.new(1,-12,0,48)
-toggleBtnContainer.Position=UDim2.new(0,6,1,-54)
-toggleBtnContainer.BackgroundTransparency=1
-local nearestBtn=Instance.new("TextButton",toggleBtnContainer)
-nearestBtn.Size=UDim2.new(0.48,0,0,22)
-nearestBtn.Position=UDim2.new(0,0,0,0)
-nearestBtn.BackgroundColor3=Theme.SurfaceHighlight
-nearestBtn.Text="NEAREST"
-nearestBtn.Font=Enum.Font.GothamBold
-nearestBtn.TextSize=8
-nearestBtn.TextColor3=Theme.TextPrimary
-Instance.new("UICorner",nearestBtn).CornerRadius=UDim.new(0,4)
-local highestBtn=Instance.new("TextButton",toggleBtnContainer)
-highestBtn.Size=UDim2.new(0.48,0,0,22)
-highestBtn.Position=UDim2.new(0.52,0,0,0)
-highestBtn.BackgroundColor3=Theme.SurfaceHighlight
-highestBtn.Text="HIGHEST"
-highestBtn.Font=Enum.Font.GothamBold
-highestBtn.TextSize=8
-highestBtn.TextColor3=Theme.TextPrimary
-Instance.new("UICorner",highestBtn).CornerRadius=UDim.new(0,4)
-local instantStealBtn=Instance.new("TextButton",toggleBtnContainer)
-instantStealBtn.Size=UDim2.new(1,0,0,22)
-instantStealBtn.Position=UDim2.new(0,0,0,26)
-instantStealBtn.BackgroundColor3=Theme.SurfaceHighlight
-instantStealBtn.Text="INSTANT STEAL : OFF"
-instantStealBtn.Font=Enum.Font.GothamBold
-instantStealBtn.TextSize=9
-instantStealBtn.TextColor3=Theme.TextPrimary
-Instance.new("UICorner",instantStealBtn).CornerRadius=UDim.new(0,4)
-local menuVisible=true
-local function toggleMenu()
-menuVisible=not menuVisible
-frame.Size=menuVisible and UDim2.new(0,180,0,200) or UDim2.new(0,180,0,28)
-local elementsToHide={targetPanel,selectLabel,listFrame,toggleBtnContainer}
-for _,element in ipairs(elementsToHide) do
-if element then
-element.Visible=menuVisible
-end
-end
-end
-titleLabel.InputBegan:Connect(function(input)
-if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
-toggleMenu()
-end
-end)
-local autoStealEnabled=true
-local stealNearestEnabled=false
-local stealHighestEnabled=true
-local instantStealEnabled=false
-local instantStealReady=false
-local selectedTargetIndex=1
-local selectedTargetUID=nil
 local allAnimalsCache={}
+local InternalStealCache={}
 local PromptMemoryCache={}
-local activeProgressTween=nil
-local petButtons={}
-local currentStealTargetUID=nil
-local instantStealDidInit=false
-local function sendRobloxNotification(title,text,duration)
-game:GetService("StarterGui"):SetCore("SendNotification",{
-Title=title,Text=text,Duration=duration or 3,})
-end
-local function isMyBaseAnimal(animalData)
-if not animalData or not animalData.plot then return false end
-local plots=Workspace:FindFirstChild("Plots")
-if not plots then return false end
-local plot=plots:FindFirstChild(animalData.plot)
-if not plot then return false end
-local channel=Synchronizer:Get(plot.Name)
-if channel then
-local owner=channel:Get("Owner")
-if owner then
-if typeof(owner)=="Instance" and owner:IsA("Player") then return owner.UserId==LocalPlayer.UserId
-elseif typeof(owner)=="table" and owner.UserId then return owner.UserId==LocalPlayer.UserId
-elseif typeof(owner)=="Instance" then return owner==LocalPlayer end
-end
-end
-return false
-end
 local function formatMutationText(mutationName)
 if not mutationName or mutationName=="None" then return "" end
 local f=""
@@ -257,558 +170,377 @@ for i=1,#mutationName do f=f.."<font color='"..cols[(i-1)%#cols+1].."'>"..mutati
 else f=mutationName end
 return "<font weight='800'>"..f.." </font>"
 end
-local function get_all_pets()
-local out={}
-for _,a in ipairs(allAnimalsCache) do
-if a.genValue >=1 and not isMyBaseAnimal(a) then
-table.insert(out,{petName=a.name,mpsText=a.genText,mpsValue=a.genValue,owner=a.owner,plot=a.plot,slot=a.slot,uid=a.uid,mutation=a.mutation,animalData=a})
+local function isMyBaseAnimal(animalData)
+if not animalData or not animalData.plot then return false end
+local plots=workspace:FindFirstChild("Plots")
+if not plots then return false end
+local plot=plots:FindFirstChild(animalData.plot)
+if not plot then return false end
+local channel=stealthGet(plot.Name)
+if channel then
+local owner=stealthGetProperty(channel,"Owner")
+if owner then
+if typeof(owner)=="Instance" and owner:IsA("Player") then return owner.UserId==LocalPlayer.UserId end
+if typeof(owner)=="table" and owner.UserId then return owner.UserId==LocalPlayer.UserId end
+if typeof(owner)=="Instance" then return owner==LocalPlayer end
 end
 end
-return out
+local sign=plot:FindFirstChild("PlotSign")
+if sign then
+local yourBase=sign:FindFirstChild("YourBase")
+if yourBase and yourBase:IsA("BillboardGui") then return yourBase.Enabled==true end
 end
-local function findAdorneeGlobal(animalData)
-if not animalData then return nil end
-local plot=Workspace:FindFirstChild("Plots") and Workspace.Plots:FindFirstChild(animalData.plot)
-if plot then
-local podiums=plot:FindFirstChild("AnimalPodiums")
-if podiums then
-local podium=podiums:FindFirstChild(animalData.slot)
-if podium then
-local base=podium:FindFirstChild("Base")
-if base then
-local spawn=base:FindFirstChild("Spawn")
-if spawn then return spawn end
-return base:FindFirstChildWhichIsA("BasePart") or base
+return false
 end
+local function get_top_10_pets()
+local topPets={}
+for _,animalData in ipairs(allAnimalsCache) do
+if not isMyBaseAnimal(animalData) then
+table.insert(topPets,{petName=animalData.name or "Unknown",mpsText=animalData.genText or "$0/s",mpsValue=animalData.genValue or 0,owner=animalData.owner or "Unknown",plot=animalData.plot or "Unknown",slot=animalData.slot or "1",uid=animalData.uid or "",mutation=animalData.mutation or "None",animalData=animalData})
 end
+if #topPets >=10 then break end
 end
-end
-return nil
+return topPets
 end
 local function findProximityPromptForAnimal(animalData)
 if not animalData then return nil end
-local cp=PromptMemoryCache[animalData.uid]
-if cp and cp.Parent then return cp end
-local plot=Workspace.Plots:FindFirstChild(animalData.plot)
+local cachedPrompt=PromptMemoryCache[animalData.uid]
+if cachedPrompt and cachedPrompt.Parent then return cachedPrompt end
+local plot=workspace.Plots:FindFirstChild(animalData.plot)
 if not plot then return nil end
 local podiums=plot:FindFirstChild("AnimalPodiums")
 if not podiums then return nil end
 local podium=podiums:FindFirstChild(animalData.slot)
-if podium then
+if not podium then return nil end
 local base=podium:FindFirstChild("Base")
-local spawn=base and base:FindFirstChild("Spawn")
-if spawn then
+if not base then return nil end
+local spawn=base:FindFirstChild("Spawn")
+if not spawn then return nil end
 local attach=spawn:FindFirstChild("PromptAttachment")
-if attach then
+if not attach then return nil end
 for _,p in ipairs(attach:GetChildren()) do
 if p:IsA("ProximityPrompt") then
 PromptMemoryCache[animalData.uid]=p
 return p
 end
 end
-end
-end
-end
 return nil
 end
-local InternalStealCache={}
-local STEAL_DURATION=1.2
 local function buildStealCallbacks(prompt)
 if InternalStealCache[prompt] then return end
-local data={holdCallbacks={},triggerCallbacks={},holdEndCallbacks={},ready=true}
+local data={holdCallbacks={},triggerCallbacks={},ready=true}
 local ok1,conns1=pcall(getconnections,prompt.PromptButtonHoldBegan)
 if ok1 and type(conns1)=="table" then
 for _,conn in ipairs(conns1) do
-if type(conn.Function)=="function" then
-table.insert(data.holdCallbacks,conn.Function)
-end
+if type(conn.Function)=="function" then table.insert(data.holdCallbacks,conn.Function) end
 end
 end
 local ok2,conns2=pcall(getconnections,prompt.Triggered)
 if ok2 and type(conns2)=="table" then
 for _,conn in ipairs(conns2) do
-if type(conn.Function)=="function" then
-table.insert(data.triggerCallbacks,conn.Function)
+if type(conn.Function)=="function" then table.insert(data.triggerCallbacks,conn.Function) end
 end
 end
-end
-local ok3,conns3=pcall(getconnections,prompt.PromptButtonHoldEnded)
-if ok3 and type(conns3)=="table" then
-for _,conn in ipairs(conns3) do
-if type(conn.Function)=="function" then
-table.insert(data.holdEndCallbacks,conn.Function)
-end
-end
-end
-if (#data.holdCallbacks > 0) or (#data.triggerCallbacks > 0) or (#data.holdEndCallbacks > 0) then
-InternalStealCache[prompt]=data
-end
+if (#data.holdCallbacks > 0) or (#data.triggerCallbacks > 0) then InternalStealCache[prompt]=data end
 end
 local function runCallbackList(list)
-for _,fn in ipairs(list) do
-task.spawn(fn)
+for _,fn in ipairs(list) do task.spawn(fn) end
 end
-end
-local function executeInternalStealAsync(prompt,animalUID)
+local function executeInternalStealAsync(prompt)
 local data=InternalStealCache[prompt]
 if not data or not data.ready then return false end
 data.ready=false
+isCurrentlyStealing=true
+local startTime=tick()
+local stealDuration=1.42
 task.spawn(function()
-if currentStealTargetUID ~=animalUID then
-if activeProgressTween then activeProgressTween:Cancel() end
-progressBarFill.Size=UDim2.new(0,0,1,0)
-currentStealTargetUID=animalUID
+if #data.holdCallbacks > 0 then runCallbackList(data.holdCallbacks) end
+while tick() - startTime < stealDuration do
+local progress=(tick() - startTime) / stealDuration
+currentStealProgress=math.clamp(progress * 100,0,100)
+task.wait(0.05)
 end
-if #data.holdCallbacks > 0 then
-runCallbackList(data.holdCallbacks)
-end
-progressBarFill.Size=UDim2.new(0,0,1,0)
-progressBarFill.BackgroundTransparency=0
-activeProgressTween=TweenService:Create(progressBarFill,TweenInfo.new(STEAL_DURATION,Enum.EasingStyle.Linear),{Size=UDim2.new(1,0,1,0)})
-activeProgressTween:Play()
-activeProgressTween.Completed:Wait()
-if currentStealTargetUID==animalUID and #data.triggerCallbacks > 0 then
-runCallbackList(data.triggerCallbacks)
-end
+if #data.triggerCallbacks > 0 then runCallbackList(data.triggerCallbacks) end
+task.wait()
 data.ready=true
+isCurrentlyStealing=false
+currentStealProgress=0
 end)
 return true
 end
-local function attemptSteal(prompt,animalUID)
+local function attemptSteal(prompt)
 if not prompt or not prompt.Parent then return false end
 buildStealCallbacks(prompt)
 if not InternalStealCache[prompt] then return false end
-if currentStealTargetUID ~=animalUID then
-if activeProgressTween then
-activeProgressTween:Cancel()
-activeProgressTween=nil
+return executeInternalStealAsync(prompt)
 end
-progressBarFill.Size=UDim2.new(0,0,1,0)
-end
-return executeInternalStealAsync(prompt,animalUID)
-end
-local INSTANT_STEAL_RADIUS=60
-local INSTANT_STEAL_COOLDOWN=0.04
-local lastInstantStealTime=0
-local function isMyPlot_Instant(plotName)
-local plots=workspace:FindFirstChild("Plots")
-if not plots then return false end
-local plot=plots:FindFirstChild(plotName)
-if not plot then return false end
-local sign=plot:FindFirstChild("PlotSign")
-if not sign then return false end
-local yb=sign:FindFirstChild("YourBase")
-return yb and yb:IsA("BillboardGui") and yb.Enabled
-end
-local function findNearestPrompt_Instant()
-local hrp=LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-if not hrp then return nil,math.huge,nil end
-local plots=workspace:FindFirstChild("Plots")
-if not plots then return nil,math.huge,nil end
-local bestPrompt,bestDist,bestName=nil,math.huge,nil
-for _,plot in ipairs(plots:GetChildren()) do
-if isMyPlot_Instant(plot.Name) then continue end
-local plotDist=math.huge
-pcall(function() plotDist=(plot:GetPivot().Position - hrp.Position).Magnitude end)
-if plotDist > INSTANT_STEAL_RADIUS + 40 then continue end
-local podiums=plot:FindFirstChild("AnimalPodiums")
-if not podiums then continue end
-for _,pod in ipairs(podiums:GetChildren()) do
-local base=pod:FindFirstChild("Base")
-local spawn=base and base:FindFirstChild("Spawn")
-if not spawn then continue end
-local dist=(spawn.Position - hrp.Position).Magnitude
-if dist > INSTANT_STEAL_RADIUS or dist >=bestDist then continue end
-local att=spawn:FindFirstChild("PromptAttachment")
-if not att then continue end
-local prompt=att:FindFirstChildOfClass("ProximityPrompt")
-if prompt and prompt.Parent and prompt.Enabled then
-bestPrompt=prompt
-bestDist=dist
-bestName=pod.Name
-end
-end
-end
-return bestPrompt,bestDist,bestName
-end
-local function executeInstantSteal(prompt)
-if not prompt then return end
-local now=os.clock()
-if now - lastInstantStealTime < INSTANT_STEAL_COOLDOWN then return end
-lastInstantStealTime=now
-buildStealCallbacks(prompt)
-local data=InternalStealCache[prompt]
-if not data then return end
-local oDur=prompt.HoldDuration
-prompt.HoldDuration=0
-for _,fn in ipairs(data.holdCallbacks) do pcall(fn) end
-for _rep=1,6 do
-for _,fn in ipairs(data.triggerCallbacks) do pcall(fn) end
-if fireproximityprompt then fireproximityprompt(prompt) end
-end
-for _,fn in ipairs(data.holdEndCallbacks) do pcall(fn) end
-prompt.HoldDuration=oDur
-end
-local function updateUI()
-if not menuVisible then
-return
-end
-toggleIndicator.BackgroundColor3=autoStealEnabled and Theme.Success or Theme.Error
-nearestBtn.BackgroundColor3=stealNearestEnabled and Theme.Accent1 or Theme.SurfaceHighlight
-nearestBtn.TextColor3=stealNearestEnabled and Color3.new(1,1,1) or Theme.TextPrimary
-highestBtn.BackgroundColor3=stealHighestEnabled and Theme.Accent1 or Theme.SurfaceHighlight
-highestBtn.TextColor3=stealHighestEnabled and Color3.new(1,1,1) or Theme.TextPrimary
-instantStealBtn.Text=instantStealEnabled and "INSTANT STEAL : ON" or "INSTANT STEAL : OFF"
-instantStealBtn.BackgroundColor3=instantStealEnabled and Theme.Accent1 or Theme.SurfaceHighlight
-instantStealBtn.TextColor3=instantStealEnabled and Color3.new(1,1,1) or Theme.TextPrimary
-if selectedTargetUID and allAnimalsCache then
-local pets=get_all_pets()
-local found=false
-for i,p in ipairs(pets) do
-if p.uid==selectedTargetUID then
-selectedTargetIndex=i
-found=true
-break
-end
-end
-end
-for _,c in ipairs(listFrame:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
-petButtons={}
-local pets=get_all_pets()
-local MAX_DISPLAY=10
-if pets and #pets > 0 then
-local displayCount=math.min(#pets,MAX_DISPLAY)
-selectLabel.Text="📋 TOP " .. displayCount .. " / " .. #pets .. " AVAILABLE"
-for i=1,displayCount do
-local petData=pets[i]
-local btn=Instance.new("TextButton")
-btn.Size=UDim2.new(1,0,0,24)
-btn.BackgroundColor3=Theme.Surface
-btn.Text=""
-btn.Parent=listFrame
-Instance.new("UICorner",btn).CornerRadius=UDim.new(0,3)
-local bStroke=Instance.new("UIStroke",btn)
-bStroke.Color=Theme.Accent1
-bStroke.Thickness=1
-bStroke.Transparency=1
-local MUT_COLORS_UI={
-Cursed=Color3.fromRGB(200,0,0),Gold=Color3.fromRGB(255,215,0),Diamond=Color3.fromRGB(0,255,255),YinYang=Color3.fromRGB(220,220,220),Rainbow=Color3.fromRGB(255,100,200),Lava=Color3.fromRGB(255,100,20),Candy=Color3.fromRGB(255,105,180),Divine=Color3.fromRGB(255,255,255)
-}
-local hasMut=petData.mutation and petData.mutation ~="None"
-local barCol=hasMut and (MUT_COLORS_UI[petData.mutation] or Color3.fromRGB(210,130,255)) or Theme.Accent2
-local itemBar=Instance.new("Frame",btn)
-itemBar.Size=UDim2.new(0,2,1,-4)
-itemBar.Position=UDim2.new(0,2,0,2)
-itemBar.BackgroundColor3=barCol
-itemBar.BorderSizePixel=0
-Instance.new("UICorner",itemBar).CornerRadius=UDim.new(1,0)
-local rankLabel=Instance.new("TextLabel",btn)
-rankLabel.Size=UDim2.new(0,18,1,0)
-rankLabel.Position=UDim2.new(0,5,0,0)
-rankLabel.BackgroundTransparency=1
-rankLabel.Text="#"..i
-rankLabel.Font=Enum.Font.GothamBlack
-rankLabel.TextSize=8
-rankLabel.TextColor3=Theme.TextSecondary
-local infoLabel=Instance.new("TextLabel",btn)
-infoLabel.Size=UDim2.new(1,-25,1,0)
-infoLabel.Position=UDim2.new(0,25,0,0)
-infoLabel.BackgroundTransparency=1
-infoLabel.RichText=true
-infoLabel.Text=formatMutationText(petData.mutation).."<font weight='700'>"..petData.petName.."</font>"
-infoLabel.Font=Enum.Font.GothamMedium
-infoLabel.TextSize=8
-infoLabel.TextXAlignment=Enum.TextXAlignment.Left
-infoLabel.TextTruncate=Enum.TextTruncate.AtEnd
-infoLabel.TextColor3=Theme.TextSecondary
-petButtons[i]={button=btn,stroke=bStroke,rank=rankLabel,info=infoLabel,bar=itemBar}
-btn.MouseButton1Click:Connect(function()
-selectedTargetIndex=i
-selectedTargetUID=petData.uid 
-stealNearestEnabled=false
-stealHighestEnabled=false
-updateUI()
-end)
-end
-else
-selectLabel.Text="📋 ALL BASE EMPTY!"
-end
-if selectedTargetIndex > #petButtons then selectedTargetIndex=1 end
-for i,pb in ipairs(petButtons) do
-local sel=(i==selectedTargetIndex)
-pb.stroke.Transparency=sel and 0 or 1
-pb.button.BackgroundColor3=sel and Theme.SurfaceHighlight or Theme.Surface
-pb.rank.TextColor3=sel and Theme.Accent1 or Theme.TextSecondary
-pb.info.TextColor3=sel and Theme.TextPrimary or Theme.TextSecondary
-end
-local pets=get_all_pets()
-local ct=pets and pets[selectedTargetIndex]
-if autoStealEnabled then
-targetLabel.Text=ct and string.sub(ct.petName,1,15) or "Searching..."
-else
-targetLabel.Text="Disabled"
-end
-listFrame.CanvasSize=UDim2.new(0,0,0,math.max(0,uiListLayout.AbsoluteContentSize.Y))
-end
-nearestBtn.MouseButton1Click:Connect(function()
-stealNearestEnabled=not stealNearestEnabled
-if stealNearestEnabled then 
-stealHighestEnabled=false
-end
-updateUI()
-end)
-highestBtn.MouseButton1Click:Connect(function()
-stealHighestEnabled=not stealHighestEnabled
-if stealHighestEnabled then 
-stealNearestEnabled=false
-end
-updateUI()
-end)
-instantStealBtn.MouseButton1Click:Connect(function()
-instantStealEnabled=not instantStealEnabled
-if not instantStealEnabled then
-instantStealReady=false
-instantStealDidInit=false
-else
-sendRobloxNotification("JACK 827","INSTANT STEAL CAN MAKE LAG!",5)
-end
-updateUI()
-end)
+local plotChannels={}
 local lastAnimalData={}
-local function getAnimalHash(al)
-if not al then return "" end
-local h=""
-for slot,d in pairs(al) do
-if type(d)=="table" then
-h=h..tostring(slot)..tostring(d.Index)..tostring(d.Mutation)
+local function getAnimalHash(animalList)
+if not animalList then return "" end
+local hash=""
+for slot,data in pairs(animalList) do
+if type(data)=="table" then hash=hash .. tostring(slot) .. tostring(data.Index) .. tostring(data.Mutation) end
 end
-end
-return h
+return hash
 end
 local function scanSinglePlot(plot)
 pcall(function()
-local ch=Synchronizer:Get(plot.Name)
-if not ch then return end
-local al=ch:Get("AnimalList")
-local hash=getAnimalHash(al)
-if lastAnimalData[plot.Name]==hash then return end
-lastAnimalData[plot.Name]=hash
+local plotUID=plot.Name
+local channel=stealthGet(plotUID)
+if not channel then return end
+local animalList=stealthGetProperty(channel,"AnimalList")
+local currentHash=getAnimalHash(animalList)
+if lastAnimalData[plotUID]==currentHash then return end
+lastAnimalData[plotUID]=currentHash
 for i=#allAnimalsCache,1,-1 do
-if allAnimalsCache[i].plot==plot.Name then
-table.remove(allAnimalsCache,i)
+if allAnimalsCache[i].plot==plot.Name then table.remove(allAnimalsCache,i) end
+end
+local owner=stealthGetProperty(channel,"Owner")
+if not owner or not Players:FindFirstChild(owner.Name) then
+for i=#allAnimalsCache,1,-1 do
+if allAnimalsCache[i].plot==plot.Name then table.remove(allAnimalsCache,i) end
+end
+return
+end
+local ownerName=owner and owner.Name or "Unknown"
+if not animalList then return end
+for slot,animalData in pairs(animalList) do
+if type(animalData)=="table" then
+local animalName=animalData.Index
+local animalInfo=AnimalsData[animalName]
+if not animalInfo then continue end
+local mutation=animalData.Mutation or "None"
+if mutation=="Yin Yang" then mutation="YinYang" end
+local traits=(animalData.Traits and #animalData.Traits > 0) and table.concat(animalData.Traits,",") or "None"
+local genValue=AnimalsShared:GetGeneration(animalName,animalData.Mutation,animalData.Traits,nil)
+local genText="$" .. NumberUtils:ToString(genValue) .. "/s"
+table.insert(allAnimalsCache,{name=animalInfo.DisplayName or animalName,genText=genText,genValue=genValue,mutation=mutation,traits=traits,owner=ownerName,plot=plot.Name,slot=tostring(slot),uid=plot.Name .. "_" .. tostring(slot)})
 end
 end
-local owner=ch:Get("Owner")
-if not owner or not Players:FindFirstChild(owner.Name) then return end
-local ownerName=owner.Name or "Unknown"
-if not al then return end
-for slot,ad in pairs(al) do
-if type(ad)=="table" then
-local aName,aInfo=ad.Index,AnimalsData[ad.Index]
-if aInfo then
-local mut=ad.Mutation or "None"
-if mut=="Yin Yang" then mut="YinYang" end
-local gv=AnimalsShared:GetGeneration(aName,ad.Mutation,ad.Traits,nil)
-local gt="$"..NumberUtils:ToString(gv).."/s"
-table.insert(allAnimalsCache,{
-name=aInfo.DisplayName or aName,genText=gt,genValue=gv,mutation=mut,traits=ad.Traits,owner=ownerName,plot=plot.Name,slot=tostring(slot),uid=plot.Name.."_"..tostring(slot)
-})
-end
-end
-end
+table.sort(allAnimalsCache,function(a,b) return a.genValue > b.genValue end)
 end)
-table.sort(allAnimalsCache,function(a,b) return a.genValue>b.genValue end)
-updateUI()
 end
 local function setupPlotListener(plot)
-local ch,retries=nil,0
-while not ch and retries<50 do
-local ok,r=pcall(function() return Synchronizer:Get(plot.Name) end)
-if ok and r then ch=r; break else retries=retries+1; task.wait(0.1) end
+if plotChannels[plot.Name] then return end
+local channel
+local retries=0
+local maxRetries=3
+while not channel and retries < maxRetries do
+channel=stealthGet(plot.Name)
+if channel then break else retries=retries + 1 if retries < maxRetries then task.wait(0.3) end end
 end
-if not ch then return end
+if not channel then return end
+plotChannels[plot.Name]=true
 scanSinglePlot(plot)
-plot.DescendantAdded:Connect(function() task.wait(0.1); scanSinglePlot(plot) end)
-plot.DescendantRemoving:Connect(function() task.wait(0.1); scanSinglePlot(plot) end)
-task.spawn(function() while plot.Parent do task.wait(5); scanSinglePlot(plot) end end)
+local c1=plot.DescendantAdded:Connect(function() task.wait(0.05) scanSinglePlot(plot) end)
+table.insert(_G.Kurdhub_V2_ScannerConnections,c1)
+local c2=plot.DescendantRemoving:Connect(function() task.wait(0.05) scanSinglePlot(plot) end)
+table.insert(_G.Kurdhub_V2_ScannerConnections,c2)
+local c3=task.spawn(function()
+while plot.Parent and plotChannels[plot.Name] do
+task.wait(3)
+scanSinglePlot(plot)
 end
-local plots=Workspace:WaitForChild("Plots",8)
-if plots then
-for _,p in ipairs(plots:GetChildren()) do
-setupPlotListener(p)
-end
-plots.ChildAdded:Connect(function(p) task.wait(0.5); setupPlotListener(p) end)
-plots.ChildRemoved:Connect(function(p)
-lastAnimalData[p.Name]=nil
-for i=#allAnimalsCache,1,-1 do
-if allAnimalsCache[i].plot==p.Name then
-table.remove(allAnimalsCache,i)
-end
-end
-updateUI()
 end)
+table.insert(_G.Kurdhub_V2_ScannerConnections,c3)
 end
-task.spawn(function()
-while true do
+local function initializePlotScanner()
+local plots=workspace:FindFirstChild("Plots")
+if not plots then
+for i=1,30 do
+plots=workspace:FindFirstChild("Plots")
+if plots then break end
 task.wait(0.5)
-if autoStealEnabled then
-local pets=get_all_pets()
-if #pets > 0 then
-local function applySelection(newIndex)
-if newIndex and newIndex >=1 and newIndex <=#pets and selectedTargetIndex ~=newIndex then
-selectedTargetIndex=newIndex
-selectedTargetUID=pets[newIndex].uid
-updateUI()
 end
+if not plots then return end
 end
-if stealNearestEnabled then
-local char=LocalPlayer.Character
-local hrp=char and char:FindFirstChild("HumanoidRootPart")
-if hrp then
-local bestIndex=nil
-local bestDist=math.huge
-for i,p in ipairs(pets) do
-local targetPart=p.animalData and findAdorneeGlobal(p.animalData)
-if targetPart and targetPart:IsA("BasePart") then
-local d=(hrp.Position - targetPart.Position).Magnitude
-if d < bestDist then
-bestDist=d
-bestIndex=i
+for _,plot in ipairs(plots:GetChildren()) do
+task.spawn(setupPlotListener,plot)
 end
-end
-end
-if bestIndex then
-applySelection(bestIndex)
-else
-applySelection(1)
-end
-else
-applySelection(1)
-end
-elseif stealHighestEnabled then
-applySelection(1)
-end
-end
-end
+local newPlotConnection=plots.ChildAdded:Connect(function(plot)
+task.wait(0.2)
+task.spawn(setupPlotListener,plot)
+end)
+table.insert(_G.Kurdhub_V2_ScannerConnections,newPlotConnection)
+local removedPlotConnection=plots.ChildRemoved:Connect(function(plot)
+plotChannels[plot.Name]=nil
+lastAnimalData[plot.Name]=nil
+for i=#allAnimalsCache,1,-1 do
+if allAnimalsCache[i].plot==plot.Name then table.remove(allAnimalsCache,i) end
 end
 end)
-RunService.Heartbeat:Connect(function()
-if not autoStealEnabled then return end
-if instantStealEnabled then
-if activeProgressTween then activeProgressTween:Cancel() activeProgressTween=nil end
-progressBarFill.Size=UDim2.new(1,0,1,0)
-progressBarFill.BackgroundTransparency=0
-if not instantStealDidInit then
-instantStealDidInit=true
+table.insert(_G.Kurdhub_V2_ScannerConnections,removedPlotConnection)
+end
+local Player=game:GetService("Players").LocalPlayer
+local PlayerGui=Player:WaitForChild("PlayerGui")
+local RunService=game:GetService("RunService")
+local screenGui,frame,targetLabel=nil,nil,nil
+local petButtons={}
+local isCollapsed=false
+local function createModernGUI()
+screenGui=Instance.new("ScreenGui",PlayerGui)
+screenGui.Name="Kurdhub_V2"
+screenGui.ResetOnSpawn=false
+_G.Kurdhub_V2_ScreenGui=screenGui
+frame=Instance.new("Frame",screenGui)
+frame.Size=UDim2.new(0,140,0,150)
+frame.Position=UDim2.new(0,170,0,10)
+frame.BackgroundColor3=Color3.fromRGB(10,10,10)
+frame.BorderSizePixel=0
+frame.Active=true
+frame.Draggable=true 
+frame.ClipsDescendants=true
+Instance.new("UICorner",frame).CornerRadius=UDim.new(0,4)
+local mainStroke=Instance.new("UIStroke",frame)
+mainStroke.Thickness=1
+mainStroke.Color=Color3.fromRGB(255,45,45)
+mainStroke.Transparency=0.1
+local title=Instance.new("TextLabel",frame)
+title.Size=UDim2.new(1,-25,0,20)
+title.Position=UDim2.new(0,5,0,2)
+title.Text="Auto Grab Target"
+title.TextColor3=Color3.fromRGB(255,255,255)
+title.Font=Enum.Font.GothamBold
+title.TextSize=11
+title.TextXAlignment=Enum.TextXAlignment.Left
+title.BackgroundTransparency=1
+local toggleBtn=Instance.new("TextButton",frame)
+toggleBtn.Size=UDim2.new(0,16,0,16)
+toggleBtn.Position=UDim2.new(1,-20,0,4)
+toggleBtn.BackgroundColor3=Color3.fromRGB(30,30,30)
+toggleBtn.Text="^"
+toggleBtn.TextColor3=Color3.fromRGB(255,255,255)
+toggleBtn.Font=Enum.Font.GothamBold
+toggleBtn.TextSize=12
+Instance.new("UICorner",toggleBtn).CornerRadius=UDim.new(0,2)
+targetLabel=Instance.new("TextLabel",frame)
+targetLabel.Size=UDim2.new(1,-5,0,18)
+targetLabel.Position=UDim2.new(0,5,0,22)
+targetLabel.Text=""
+targetLabel.TextColor3=Color3.fromRGB(150,150,150)
+targetLabel.Font=Enum.Font.GothamMedium
+targetLabel.TextSize=8
+targetLabel.TextXAlignment=Enum.TextXAlignment.Left
+targetLabel.BackgroundTransparency=1
+local scrollFrame=Instance.new("ScrollingFrame",frame)
+scrollFrame.Name="PetScrollFrame"
+scrollFrame.Size=UDim2.new(0.9,0,0.6,0)
+scrollFrame.Position=UDim2.new(0.05,0,0.35,0)
+scrollFrame.BackgroundTransparency=1
+scrollFrame.ScrollBarThickness=3
+scrollFrame.ScrollBarImageColor3=Color3.fromRGB(255,45,45)
+scrollFrame.CanvasSize=UDim2.new(0,0,0,150)
+scrollFrame.AutomaticCanvasSize=Enum.AutomaticSize.Y
+scrollFrame.BorderSizePixel=0
+local layout=Instance.new("UIListLayout",scrollFrame)
+layout.Padding=UDim.new(0,3)
+layout.HorizontalAlignment=Enum.HorizontalAlignment.Center
+layout.SortOrder=Enum.SortOrder.LayoutOrder
+layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+scrollFrame.CanvasSize=UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 5)
+end)
+toggleBtn.MouseButton1Click:Connect(function()
+isCollapsed=not isCollapsed
+if isCollapsed then
+frame:TweenSize(UDim2.new(0,140,0,28),"Out","Quart",0.2,true)
+scrollFrame.Visible=false
+targetLabel.Visible=false
+toggleBtn.Text="v"
+else
+frame:TweenSize(UDim2.new(0,140,0,150),"Out","Quart",0.2,true)
+scrollFrame.Visible=true
+targetLabel.Visible=true
+toggleBtn.Text="^"
+end
+end)
+for i=1,10 do
+local btn=Instance.new("TextButton",scrollFrame)
+btn.Size=UDim2.new(1,-4,0,18)
+btn.BackgroundColor3=Color3.fromRGB(20,20,20)
+btn.Text="Slot " .. i
+btn.TextColor3=Color3.fromRGB(200,200,200)
+btn.Font=Enum.Font.GothamSemibold
+btn.TextSize=9
+btn.TextXAlignment=Enum.TextXAlignment.Left
+btn.AutoButtonColor=true
+btn.LayoutOrder=i
+btn.RichText=true
+Instance.new("UICorner",btn).CornerRadius=UDim.new(0,3)
+local bStroke=Instance.new("UIStroke",btn)
+bStroke.Color=Color3.fromRGB(255,45,45)
+bStroke.Thickness=0.8
+bStroke.Transparency=0.9
+bStroke.Name="BtnStroke"
+btn.MouseButton1Click:Connect(function()
+selectedTargetIndex=i
+for idx,item in ipairs(petButtons) do 
+if item and item.btn then
+item.btn.BackgroundColor3=Color3.fromRGB(20,20,20)
+if item.btn.BtnStroke then
+item.btn.BtnStroke.Transparency=0.9
+end
+end
+end
+btn.BackgroundColor3=Color3.fromRGB(40,15,15)
+if bStroke then
+bStroke.Transparency=0.3
+end
+end)
+petButtons[i]={btn=btn}
+end
+end
+local function updateUI()
+if not targetLabel then return end
+local topPets=(typeof(get_top_10_pets)=="function") and get_top_10_pets() or {}
+for i=1,10 do
+if petButtons[i] and petButtons[i].btn then
+local btn=petButtons[i].btn
+if topPets[i] then
+local pet=topPets[i]
+local petName=pet.petName or "Pet"
+if pet.mutation and pet.mutation ~="None" then
+petName=formatMutationText(pet.mutation) .. petName
+end
+btn.Text="#" .. i .. " " .. petName .. "  " .. NumberUtils:ToString(pet.mpsValue) .. "/s"
+btn.TextColor3=Color3.fromRGB(255,255,255)
+else
+btn.Text="#" .. i .. " Empty"
+btn.TextColor3=Color3.fromRGB(100,100,100)
+end
+end
+end
+local current=topPets[selectedTargetIndex]
+if current then
+targetLabel.Text="" .. (current.petName or "Locked") .. " ($" .. string.format("%.1f",current.mpsValue/1000) .. "k)"
+else
+targetLabel.Text=""
+end
+targetLabel.TextColor3=current and Color3.fromRGB(255,80,80) or Color3.fromRGB(100,100,100)
+end
+local function autoStealLoop()
+_G.Kurdhub_V2_Heartbeat=RunService.Heartbeat:Connect(function()
+local topPets=(typeof(get_top_10_pets)=="function") and get_top_10_pets() or {}
+local targetAnimal=topPets[selectedTargetIndex] and topPets[selectedTargetIndex].animalData 
+if not targetAnimal or (typeof(isMyBaseAnimal)=="function" and isMyBaseAnimal(targetAnimal)) then return end
+local prompt=(typeof(findProximityPromptForAnimal)=="function") and findProximityPromptForAnimal(targetAnimal) 
+if prompt and (typeof(attemptSteal)=="function") then 
+attemptSteal(prompt) 
+end
+end)
+end
 task.spawn(function()
 if not game:IsLoaded() then game.Loaded:Wait() end
+createModernGUI()
+selectedTargetIndex=1
+if petButtons[1] and petButtons[1].btn then
 task.wait(0.5)
-instantStealReady=true
+petButtons[1].btn.BackgroundColor3=Color3.fromRGB(40,15,15)
+if petButtons[1].btn.BtnStroke then
+petButtons[1].btn.BtnStroke.Transparency=0.3
+end
+end
+if typeof(initializePlotScanner)=="function" then initializePlotScanner() end
+autoStealLoop()
+while task.wait(0.2) do pcall(updateUI) end
 end)
-end
-if instantStealReady then
-if stealNearestEnabled then
-local prompt,dist,name=findNearestPrompt_Instant()
-if prompt and dist <=INSTANT_STEAL_RADIUS then
-executeInstantSteal(prompt)
-end
-else
-local pets=get_all_pets()
-if #pets > 0 then
-if selectedTargetIndex > #pets then selectedTargetIndex=#pets end
-if selectedTargetIndex < 1 then selectedTargetIndex=1 end
-local tp=pets[selectedTargetIndex]
-if tp and not isMyBaseAnimal(tp.animalData) then
-local pr=PromptMemoryCache[tp.uid]
-if not pr or not pr.Parent then
-pr=findProximityPromptForAnimal(tp.animalData)
-end
-if pr then
-executeInstantSteal(pr)
-end
-end
-end
-end
-end
-return
-end
-local pets=get_all_pets()
-if #pets==0 then return end
-if selectedTargetIndex > #pets then selectedTargetIndex=#pets end
-if selectedTargetIndex < 1 then selectedTargetIndex=1 end
-local tp=pets[selectedTargetIndex]
-if not tp or isMyBaseAnimal(tp.animalData) then return end
-local pr=PromptMemoryCache[tp.uid]
-if not pr or not pr.Parent then
-pr=findProximityPromptForAnimal(tp.animalData)
-end
-if pr then
-attemptSteal(pr,tp.uid)
-end
-end)
-task.spawn(function()
-while task.wait(2) do
-if autoStealEnabled then
-for _,prompt in pairs(PromptMemoryCache) do
-if prompt and prompt.Parent then
-buildStealCallbacks(prompt)
-end
-end
-end
-end
-end)
-task.spawn(function()
-while task.wait(0.5) do
-if menuVisible then
-updateUI()
-end
-end
-end)
-local beamFolder=Instance.new("Folder",Workspace)
-beamFolder.Name="XiTracers"
-local currentBeam=nil
-local currentAtt0=nil
-local currentAtt1=nil
-local function updateTracer()
-if not autoStealEnabled then
-if currentBeam then currentBeam.Enabled=false end
-return
-end
-local pets=get_all_pets()
-if #pets==0 then
-if currentBeam then currentBeam.Enabled=false end
-return
-end
-if selectedTargetIndex > #pets then selectedTargetIndex=#pets end
-if selectedTargetIndex < 1 then selectedTargetIndex=1 end
-local best=pets[selectedTargetIndex] or pets[1]
-local targetPart=findAdorneeGlobal(best.animalData)
-local char=LocalPlayer.Character
-local hrp=char and char:FindFirstChild("HumanoidRootPart")
-if hrp and targetPart then
-if not currentAtt0 or currentAtt0.Parent ~=hrp then
-if currentAtt0 then currentAtt0:Destroy() end
-currentAtt0=Instance.new("Attachment",hrp)
-end
-if not currentAtt1 or currentAtt1.Parent ~=targetPart then
-if currentAtt1 then currentAtt1:Destroy() end
-currentAtt1=Instance.new("Attachment",targetPart)
-end
-if not currentBeam then
-currentBeam=Instance.new("Beam",beamFolder)
-currentBeam.FaceCamera=true
-currentBeam.Width0=0.4
-currentBeam.Width1=0.4
-currentBeam.TextureMode=Enum.TextureMode.Static
-currentBeam.TextureSpeed=3
-currentBeam.Color=ColorSequence.new(Theme.Accent1)
-end
-currentBeam.Attachment0=currentAtt0
-currentBeam.Attachment1=currentAtt1
-currentBeam.Enabled=true
-else
-if currentBeam then currentBeam.Enabled=false end
-end
-end
-RunService.Heartbeat:Connect(updateTracer)
-task.delay(1,function() updateUI() end)
