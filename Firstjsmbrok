@@ -2,53 +2,169 @@ local Players=game:GetService("Players")
 local TweenService=game:GetService("TweenService")
 local UserInputService=game:GetService("UserInputService")
 local CoreGui=game:GetService("CoreGui")
-local player=Players.LocalPlayer
-if CoreGui:FindFirstChild("APSpammer") then CoreGui["APSpammer"]:Destroy() end
-local function tw(o,i,p)TweenService:Create(o,i,p):Play()end
-local function findAdminPanel()return player:WaitForChild("PlayerGui"):FindFirstChild("AdminPanel")end
-local function clickButton(b)pcall(function()for _,c in pairs(getconnections(b.MouseButton1Click))do c:Fire()end for _,c in pairs(getconnections(b.Activated))do c:Fire()end end)end
+local Workspace=game:GetService("Workspace")
+local LocalPlayer=Players.LocalPlayer
+if CoreGui:FindFirstChild("APSpammer") then
+CoreGui.APSpammer:Destroy()
+end
+local function tw(o,i,p)
+TweenService:Create(o,i,p):Play()
+end
+local function findAdminPanel()
+return LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("AdminPanel")
+end
+local function clickButton(b)
+pcall(function()
+for _,c in pairs(getconnections(b.MouseButton1Click)) do c:Fire() end
+for _,c in pairs(getconnections(b.Activated)) do c:Fire() end
+end)
+end
 local function findPlayerButton(t)
-local a=findAdminPanel()if not a then return nil end
-for _,d in pairs(a:GetDescendants())do
-if d:IsA("TextButton")or d:IsA("ImageButton")then
-local txt=d:IsA("TextButton")and d.Text or""
-if txt==""then for _,c in pairs(d:GetDescendants())do if c:IsA("TextLabel")then txt=c.Text break end end end
-if txt==t.DisplayName or txt==t.Name or txt:find(t.DisplayName)or txt:find(t.Name)then return d end
-end end
-return nil
+local a=findAdminPanel()
+if not a then return nil end
+for _,d in pairs(a:GetDescendants()) do
+if d:IsA("TextButton") or d:IsA("ImageButton") then
+local txt=d:IsA("TextButton") and d.Text or ""
+if txt=="" then
+for _,c in pairs(d:GetDescendants()) do
+if c:IsA("TextLabel") then
+txt=c.Text
+break
+end
+end
+end
+if txt==t.Name or txt==t.DisplayName or txt:find(t.Name) or txt:find(t.DisplayName) then
+return d
+end
+end
+end
 end
 local function getCommandButtons()
-local b={}local a=findAdminPanel()if not a then return b end
-for _,d in pairs(a:GetDescendants())do
-if d:IsA("TextButton")or d:IsA("ImageButton")then
-local txt=d:IsA("TextButton")and d.Text or""
-if txt==""then for _,c in pairs(d:GetDescendants())do if c:IsA("TextLabel")and c.Text~=""then txt=c.Text break end end end
-if txt and txt~=""and(txt:match("^:")or txt:match("^;"))then table.insert(b,{button=d,name=txt:lower()})end
+local b={}
+local a=findAdminPanel()
+if not a then return b end
+for _,d in pairs(a:GetDescendants()) do
+if d:IsA("TextButton") or d:IsA("ImageButton") then
+local txt=d:IsA("TextButton") and d.Text or ""
+if txt=="" then
+for _,c in pairs(d:GetDescendants()) do
+if c:IsA("TextLabel") and c.Text ~="" then
+txt=c.Text
+break
+end
+end
+end
+if txt ~="" and (txt:match("^:") or txt:match("^;")) then
+table.insert(b,{button=d,name=txt:lower()})
+end
 end
 end
 return b
 end
 local CMDS={"rocket","morph","inverse","ragdoll","balloon","nightvision","jumpscare","jail","tiny"}
-local function spamPlayer(t)
-task.spawn(function()
-local a=findAdminPanel()if not a then return end
-local cb=getCommandButtons()
+local function runSingleCmd(t,cmd)
 local pb=findPlayerButton(t)
 if not pb then return end
-local te={}
-for _,c in pairs(cb)do for _,cmd in ipairs(CMDS)do if c.name:find(cmd)then table.insert(te,c)break end end end
-for _,c in pairs(te)do clickButton(pb)clickButton(c.button)end
+for _,c in pairs(getCommandButtons()) do
+if c.name:find(cmd) then
+clickButton(pb)
+clickButton(c.button)
+break
+end
+end
+end
+local function spamPlayer(t)
+task.spawn(function()
+local pb=findPlayerButton(t)
+if not pb then return end
+for _,c in pairs(getCommandButtons()) do
+for _,v in ipairs(CMDS) do
+if c.name:find(v) then
+clickButton(pb)
+clickButton(c.button)
+break
+end
+end
+end
 end)
 end
-local function isStealing(p)return p:GetAttribute("Stealing")==true end
-local sg=Instance.new("ScreenGui")
+local function getStealingInfo(p)
+local s=p:GetAttribute("Stealing")
+local i=p:GetAttribute("StealingIndex")
+if s and i then
+return true,i
+elseif s then
+return true,nil
+end
+return false,nil
+end
+local function getNearestOwner()
+local char=LocalPlayer.Character
+local hrp=char and char:FindFirstChild("HumanoidRootPart")
+if not hrp then return nil end
+local plots=Workspace:FindFirstChild("Plots")
+if not plots then return nil end
+local myPlot
+local lpName=LocalPlayer.Name:lower()
+local lpDisplay=LocalPlayer.DisplayName:lower()
+for _,p in pairs(plots:GetChildren()) do
+local sign=p:FindFirstChild("PlotSign")
+local lbl=sign and sign:FindFirstChild("TextLabel",true)
+if lbl and (lbl.Text:lower():find(lpName) or lbl.Text:lower():find(lpDisplay)) then
+myPlot=p
+break
+end
+end
+local nearestPlot
+local nearestDist=math.huge
+for _,p in pairs(plots:GetChildren()) do
+if p ~=myPlot then
+local sign=p:FindFirstChild("PlotSign")
+local part=sign and sign:FindFirstChildWhichIsA("BasePart",true)
+if part then
+local dist=(hrp.Position - part.Position).Magnitude
+if dist < nearestDist then
+nearestDist=dist
+nearestPlot=p
+end
+end
+end
+end
+if not nearestPlot then return nil end
+local sign=nearestPlot:FindFirstChild("PlotSign")
+local lbl=sign and sign:FindFirstChild("TextLabel",true)
+if not lbl then return nil end
+local txt=lbl.Text:lower()
+for _,p in pairs(Players:GetPlayers()) do
+if p ~=LocalPlayer then
+if txt:find(p.Name:lower()) or txt:find(p.DisplayName:lower()) then
+return p
+end
+end
+end
+end
+local function spamOwner()
+local target=getNearestOwner()
+if not target then return end
+runSingleCmd(target,"rocket")
+task.wait(0.1)
+runSingleCmd(target,"jail")
+task.wait(1)
+local cmds={
+"balloon","inverse","jumpscare","morph","nightvision","ragdoll","tiny"
+}
+for _,cmd in ipairs(cmds) do
+runSingleCmd(target,cmd)
+task.wait(0.15)
+end
+end
+local sg=Instance.new("ScreenGui",CoreGui)
 sg.Name="APSpammer"
 sg.ResetOnSpawn=false
 sg.DisplayOrder=999
-sg.Parent=CoreGui
 local main=Instance.new("Frame",sg)
 main.Size=UDim2.new(0,150,0,28)
-main.Position=UDim2.new(0.5,-50,0,-30)
+main.Position=UDim2.new(0.5,-75,0,-30)
 main.BackgroundColor3=Color3.fromRGB(10,10,10)
 main.BorderSizePixel=0
 main.ClipsDescendants=true
@@ -64,8 +180,8 @@ local title=Instance.new("TextLabel",header)
 title.Size=UDim2.new(1,-20,1,0)
 title.Position=UDim2.new(0,8,0,0)
 title.BackgroundTransparency=1
-title.Text="Jack's AP Spammer"
-title.TextColor3=Color3.fromRGB(255,255,255)
+title.Text="AP Spammer"
+title.TextColor3=Color3.new(1,1,1)
 title.TextSize=11
 title.Font=Enum.Font.GothamBold
 title.TextXAlignment=Enum.TextXAlignment.Left
@@ -77,6 +193,15 @@ arrow.Text="▼"
 arrow.TextColor3=Color3.fromRGB(150,150,150)
 arrow.TextSize=9
 arrow.Font=Enum.Font.GothamBold
+local ownerBtn=Instance.new("TextButton",header)
+ownerBtn.Size=UDim2.new(0,26,0,18)
+ownerBtn.Position=UDim2.new(1,-45,0.5,-9)
+ownerBtn.BackgroundColor3=Color3.fromRGB(25,25,25)
+ownerBtn.Text="👑"
+ownerBtn.TextSize=11
+ownerBtn.Font=Enum.Font.GothamBold
+ownerBtn.TextColor3=Color3.new(1,1,1)
+Instance.new("UICorner",ownerBtn).CornerRadius=UDim.new(0,4)
 local container=Instance.new("Frame",main)
 container.Size=UDim2.new(1,0,0,0)
 container.Position=UDim2.new(0,0,0,28)
@@ -89,11 +214,11 @@ playerList.Size=UDim2.new(1,0,1,0)
 playerList.BackgroundTransparency=1
 playerList.BorderSizePixel=0
 playerList.ScrollBarThickness=3
-playerList.CanvasSize=UDim2.new(0,0,0,0)
 local UIList=Instance.new("UIListLayout",playerList)
 UIList.Padding=UDim.new(0,2)
-UIList.HorizontalAlignment=Enum.HorizontalAlignment.Center
-UIList.SortOrder=Enum.SortOrder.LayoutOrder
+local minimized=true
+local SHOW=3
+local HEIGHT=36
 local dragging=false
 local dragInput
 local dragStart
@@ -103,12 +228,24 @@ if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.Use
 dragging=true
 dragStart=i.Position
 startPos=main.Position
-i.Changed:Connect(function()if i.UserInputState==Enum.UserInputState.End then dragging=false end end)
+i.Changed:Connect(function()
+if i.UserInputState==Enum.UserInputState.End then
+dragging=false
 end
 end)
-header.InputChanged:Connect(function(i)if i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch then dragInput=i end end)
-UserInputService.InputChanged:Connect(function(i)if i==dragInput and dragging then local d=i.Position-dragStart main.Position=UDim2.new(startPos.X.Scale,startPos.X.Offset+d.X,startPos.Y.Scale,startPos.Y.Offset+d.Y)end end)
-local minimized=true
+end
+end)
+header.InputChanged:Connect(function(i)
+if i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch then
+dragInput=i
+end
+end)
+UserInputService.InputChanged:Connect(function(i)
+if dragging and i==dragInput then
+local d=i.Position - dragStart
+main.Position=UDim2.new(startPos.X.Scale,startPos.X.Offset+d.X,startPos.Y.Scale,startPos.Y.Offset+d.Y)
+end
+end)
 local function toggle()
 minimized=not minimized
 if minimized then
@@ -117,17 +254,50 @@ container.Size=UDim2.new(1,0,0,0)
 main.Size=UDim2.new(0,150,0,28)
 else
 arrow.Text="▲"
-local pc=#Players:GetPlayers()-1
-local h=math.min(pc*36,250)
+local h=math.min(#Players:GetPlayers()-1,SHOW)*HEIGHT
 container.Size=UDim2.new(1,0,0,h)
 main.Size=UDim2.new(0,150,0,28+h)
 end
 end
 header.MouseButton1Click:Connect(toggle)
+ownerBtn.MouseButton1Click:Connect(function()
+spamOwner()
+end)
+local icons={
+{icon="🚀",cmd="rocket"},{icon="🏃",cmd="ragdoll"},{icon="🔒",cmd="jail"},{icon="🎈",cmd="balloon"}
+}
+local function flash(ic)
+ic.BackgroundTransparency=0
+ic.BackgroundColor3=Color3.fromRGB(0,170,0)
+task.delay(2,function()
+if ic and ic.Parent then
+ic.BackgroundTransparency=1
+end
+end)
+end
 local function updatePlayerList()
-for _,v in pairs(playerList:GetChildren())do if v:IsA("TextButton")then v:Destroy()end end
-local ps={}for _,p in pairs(Players:GetPlayers())do if p~=player then table.insert(ps,p)end end
-for _,p in pairs(ps)do
+for _,v in pairs(playerList:GetChildren()) do
+if v:IsA("TextButton") then
+v:Destroy()
+end
+end
+local top={}
+local normal={}
+for _,p in pairs(Players:GetPlayers()) do
+if p ~=LocalPlayer then
+local s=p:GetAttribute("Stealing")
+if s then
+table.insert(top,p)
+else
+table.insert(normal,p)
+end
+end
+end
+local list={}
+for _,p in ipairs(top) do table.insert(list,p) end
+for _,p in ipairs(normal) do table.insert(list,p) end
+for _,p in ipairs(list) do
+local stealing,index=getStealingInfo(p)
 local btn=Instance.new("TextButton",playerList)
 btn.Size=UDim2.new(1,-8,0,34)
 btn.BackgroundColor3=Color3.fromRGB(20,20,20)
@@ -135,38 +305,66 @@ btn.BorderSizePixel=0
 btn.Text=""
 btn.AutoButtonColor=false
 Instance.new("UICorner",btn).CornerRadius=UDim.new(0,4)
+btn.MouseButton1Click:Connect(function()
+spamPlayer(p)
+end)
 local avatar=Instance.new("ImageLabel",btn)
 avatar.Size=UDim2.new(0,24,0,24)
 avatar.Position=UDim2.new(0,5,0.5,-12)
 avatar.BackgroundColor3=Color3.fromRGB(30,30,30)
-avatar.Image="rbxthumb://type=AvatarHeadShot&id="..p.UserId.."&w=48&h=48"
 avatar.BorderSizePixel=0
+avatar.Image="rbxthumb://type=AvatarHeadShot&id="..p.UserId.."&w=48&h=48"
 Instance.new("UICorner",avatar).CornerRadius=UDim.new(1,0)
 local name=Instance.new("TextLabel",btn)
-name.Size=UDim2.new(1,-35,0,28)
-name.Position=UDim2.new(0,34,0.5,-14)
+name.Size=UDim2.new(1,-65,0,12)
+name.Position=UDim2.new(0,34,0,2)
 name.BackgroundTransparency=1
 name.Text=p.DisplayName
-name.TextColor3=isStealing(p)and Color3.fromRGB(255,50,50)or Color3.fromRGB(255,255,255)
+name.TextColor3=Color3.new(1,1,1)
 name.TextSize=11
 name.Font=Enum.Font.GothamBold
 name.TextXAlignment=Enum.TextXAlignment.Left
-name.TextYAlignment=Enum.TextYAlignment.Center
-btn.MouseEnter:Connect(function()tw(btn,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(30,30,30)})end)
-btn.MouseLeave:Connect(function()tw(btn,TweenInfo.new(0.1),{BackgroundColor3=Color3.fromRGB(20,20,20)})end)
-local target=p
-btn.MouseButton1Click:Connect(function()
-tw(btn,TweenInfo.new(0.05),{BackgroundColor3=Color3.fromRGB(45,45,45)})
-task.delay(0.1,function()tw(btn,TweenInfo.new(0.2),{BackgroundColor3=Color3.fromRGB(20,20,20)})end)
-spamPlayer(target)
+local sub=Instance.new("TextLabel",btn)
+sub.Size=UDim2.new(1,-65,0,10)
+sub.Position=UDim2.new(0,34,0,13)
+sub.BackgroundTransparency=1
+sub.Text=index and tostring(index) or ""
+sub.TextColor3=Color3.fromRGB(255,210,60)
+sub.TextSize=9
+sub.Font=Enum.Font.GothamBold
+sub.TextXAlignment=Enum.TextXAlignment.Left
+for i,v in ipairs(icons) do
+local ic=Instance.new("TextButton",btn)
+ic.Size=UDim2.new(0,18,0,10)
+ic.Position=UDim2.new(0,34 + (i-1)*20,0,23)
+ic.BackgroundTransparency=1
+ic.Text=""
+ic.AutoButtonColor=false
+local emoji=Instance.new("TextLabel",ic)
+emoji.Size=UDim2.new(1,0,1,0)
+emoji.BackgroundTransparency=1
+emoji.Text=v.icon
+emoji.TextSize=10
+emoji.Font=Enum.Font.GothamBold
+emoji.TextColor3=Color3.new(1,1,1)
+ic.MouseButton1Click:Connect(function()
+runSingleCmd(p,v.cmd)
+flash(ic)
 end)
 end
-playerList.CanvasSize=UDim2.new(0,0,0,#ps*36)
-if not minimized then local h=math.min(#ps*36,250)container.Size=UDim2.new(1,0,0,h)main.Size=UDim2.new(0,150,0,28+h)end
 end
-local function attributeChanged(p)for _,v in pairs(playerList:GetChildren())do if v:IsA("TextButton")then local lbl=v:FindFirstChildWhichIsA("TextLabel")if lbl and lbl.Text==p.DisplayName then lbl.TextColor3=isStealing(p)and Color3.fromRGB(255,50,50)or Color3.fromRGB(255,255,255)end end end end
-local function onPlayerAdded(p)p.AttributeChanged:Connect(function()attributeChanged(p)end)end
-updatePlayerList()
-Players.PlayerAdded:Connect(function(p)updatePlayerList()onPlayerAdded(p)end)
+playerList.CanvasSize=UDim2.new(0,0,0,#list*HEIGHT)
+if not minimized then
+local h=math.min(#list,SHOW)*HEIGHT
+container.Size=UDim2.new(1,0,0,h)
+main.Size=UDim2.new(0,150,0,28+h)
+end
+end
+Players.PlayerAdded:Connect(updatePlayerList)
 Players.PlayerRemoving:Connect(updatePlayerList)
-for _,p in pairs(Players:GetPlayers())do if p~=player then onPlayerAdded(p)end end
+for _,p in pairs(Players:GetPlayers()) do
+if p ~=LocalPlayer then
+p.AttributeChanged:Connect(updatePlayerList)
+end
+end
+updatePlayerList()
