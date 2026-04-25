@@ -224,27 +224,3 @@ task.spawn(function()
         end
     end
 end)
-
-pcall(function()
-    UI:MakeTog(PlayerTab, 50, "AP Circle", function(state)
-        Config.apc = state
-        SaveConfig()
-        if state then
-            pcall(function()
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/Ninja10908/Brok/main/Location-grow", true))()
-            end)
-        else
-            pcall(function()
-                local gui = targetFolder:FindFirstChild(AP_NAME)
-                if gui then gui:Destroy() end
-                local visualRing = Workspace:FindFirstChild(RING_NAME)
-                if visualRing then visualRing:Destroy() end
-                for _, v in pairs(getconnections(RunService.RenderStepped)) do
-                    if v.Function and string.dump(v.Function):find(RING_NAME) then
-                        v:Disable()
-                    end
-                end
-            end)
-        end
-    end, Config.apc or false, "apc", "Right")
-end)
