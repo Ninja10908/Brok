@@ -33,8 +33,9 @@ destroyOldRing()
 local function click(btn)
     if not btn then return end
     pcall(function()
-        for _,c in pairs(getconnections(btn.MouseButton1Click)) do c:Fire() end
-        for _,c in pairs(getconnections(btn.Activated)) do c:Fire() end
+        if btn:IsA("TextButton") or btn:IsA("ImageButton") then
+            btn:Activate() 
+        end
     end)
 end
 
@@ -60,6 +61,7 @@ local function runSmartSequence(target)
     task.spawn(function()
         local panel = targetFolder:FindFirstChild("AdminPanel")
         if not panel then playerProcessing[target.UserId] = false return end
+        
         local function executeBatch(amt)
             local stringsToSearch = getReadyCommands(amt)
             if #stringsToSearch == 0 then return false end
@@ -86,10 +88,12 @@ local function runSmartSequence(target)
             end
             return false
         end
+        
         executeBatch(3)
         task.wait(Settings.NextActionDelay)
         local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
         local tRoot = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
+        
         if Settings.Enabled and root and tRoot and (root.Position - tRoot.Position).Magnitude <= Settings.Range then
             executeBatch(3)
             task.wait(Settings.NextActionDelay)
