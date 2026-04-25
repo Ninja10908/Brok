@@ -1,226 +1,360 @@
 local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
-local player = Players.LocalPlayer
-local targetFolder = player:WaitForChild("PlayerGui")
+local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
-local AP_NAME = "Internal_Mini_System"
-local RING_NAME = "Internal_Visual_Part"
-
-local COMMAND_DATA = {
-    ["jail"]=60,["ragdoll"]=30,["balloon"]=30,["jumpscare"]=60,["rocket"]=120,["inverse"]=60,["nightvision"]=60,["tiny"]=60,["morph"]=60
+local Theme = {
+    Background = Color3.fromRGB(0, 0, 0),
+    Surface = Color3.fromRGB(20, 5, 5),
+    SurfaceHighlight = Color3.fromRGB(40, 10, 10),
+    Accent1 = Color3.fromRGB(255, 0, 0),
+    Accent2 = Color3.fromRGB(200, 50, 50),
+    TextPrimary = Color3.fromRGB(255, 200, 200),
+    TextSecondary = Color3.fromRGB(200, 150, 150),
+    Success = Color3.fromRGB(255, 0, 0),
+    Error = Color3.fromRGB(255, 60, 80),
 }
-local CMDS_ORDER = {"jail","ragdoll","balloon","jumpscare","rocket","inverse","nightvision","tiny","morph"}
-local Settings = {
-    Enabled=false,Range=30,CheckRate=0.5,NextActionDelay=3 
-}
-local rangeList = {30,40,50,70,100}
-local rangeIndex = 1 
-local globalCooldowns = {} 
-local playerProcessing = {} 
 
-local function destroyOldRing()
-    for _,v in pairs(Workspace:GetDescendants()) do
-        if v:IsA("Part") and v.Name == RING_NAME then
-            v:Destroy()
+local IS_MOBILE = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled and not UserInputService.MouseEnabled
+local mobileScale = IS_MOBILE and 0.65 or 1
+
+
+
+local ALL_COMMANDS = {"balloon", "inverse", "jail", "jumpscare", "morph", "nightvision", "ragdoll", "rocket", "tiny"}
+local COOLDOWNS = {rocket = 120, ragdoll = 30, balloon = 30, inverse = 60, nightvision = 60, jail = 60, tiny = 60, jumpscare = 60, morph = 60}
+local activeCooldowns = {}
+
+local function isOnCooldown(cmd)
+    if not activeCooldowns[cmd] then return false end
+    return (tick() - activeCooldowns[cmd]) < (COOLDOWNS[cmd] or 0)
+end
+
+local function fireClick(button)
+    if button then
+        if firesignal then
+            firesignal(button.MouseButton1Click)
+            firesignal(button.MouseButton1Down)
+            firesignal(button.Activated)
+        else
+            local x = button.AbsolutePosition.X + (button.AbsoluteSize.X / 2)
+            local y = button.AbsolutePosition.Y + (button.AbsoluteSize.Y / 2)
+            VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 0)
+            task.wait()
+            VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 0)
         end
     end
 end
-destroyOldRing()
 
-local function click(btn)
-    if not btn then return end
-    pcall(function()
-        if btn:IsA("TextButton") or btn:IsA("ImageButton") then
-            btn:Activate() 
+local function runAdminCommand(targetPlayer, commandName)
+    local adminGui = PlayerGui:FindFirstChild("AdminPanel")
+    if not adminGui then return false end
+    local adminPanel = adminGui:FindFirstChild("AdminPanel")
+    if not adminPanel then return false end
+    local contentScroll = adminPanel:FindFirstChild("Content")
+    if not contentScroll then return false end
+    local scrollingFrame = contentScroll:FindFirstChild("ScrollingFrame")
+    if not scrollingFrame then return false end
+    local cmdBtn = scrollingFrame:FindFirstChild(commandName)
+    if not cmdBtn then return false end
+    fireClick(cmdBtn)
+    task.wait(0.05)
+    local profilesScroll = adminPanel:FindFirstChild("Profiles")
+    if not profilesScroll then return false end
+    local profilesScrollingFrame = profilesScroll:FindFirstChild("ScrollingFrame")
+    if not profilesScrollingFrame then return false end
+    local playerBtn = profilesScrollingFrame:FindFirstChild(targetPlayer.Name)
+    if not playerBtn then return false end
+    fireClick(playerBtn)
+    return true
+end
+
+local toolsGui = Instance.new("ScreenGui")
+toolsGui.Name = "jackAPC"
+toolsGui.ResetOnSpawn = false
+toolsGui.Parent = PlayerGui
+
+local toolsFrame = Instance.new("Frame")
+toolsFrame.Name = "Frame"
+toolsFrame.Size = UDim2.new(0, 160 * mobileScale, 0, 100 * mobileScale)
+toolsFrame.Position = UDim2.new(0.02, 0, 0.35, 0)
+toolsFrame.BackgroundColor3 = Theme.Background
+toolsFrame.BackgroundTransparency = 0.05
+toolsFrame.BorderSizePixel = 0
+toolsFrame.Parent = toolsGui
+toolsFrame.ClipsDescendants = true
+
+Instance.new("UICorner", toolsFrame).CornerRadius = UDim.new(0, 12)
+local panelStroke = Instance.new("UIStroke", toolsFrame)
+panelStroke.Color = Theme.Accent2
+panelStroke.Thickness = 1.5
+panelStroke.Transparency = 0.55
+
+local function MakeDraggable(handle, target)
+    local dragging, dragInput, dragStart, startPos
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = target.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    handle.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            target.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
         end
     end)
 end
 
-local function isCommandReady(cmdName)
-    local readyAt = globalCooldowns[cmdName] or 0
-    return tick() >= readyAt
+MakeDraggable(toolsFrame, toolsFrame)
+
+local layout = Instance.new("UIListLayout", toolsFrame)
+layout.Padding = UDim.new(0, 6)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local pad = Instance.new("UIPadding", toolsFrame)
+pad.PaddingTop = UDim.new(0, 8)
+pad.PaddingBottom = UDim.new(0, 8)
+pad.PaddingLeft = UDim.new(0, 8)
+pad.PaddingRight = UDim.new(0, 8)
+
+local function makeBtn(text)
+    local b = Instance.new("TextButton", toolsFrame)
+    b.Size = UDim2.new(1, 0, 0, 26)
+    b.BackgroundColor3 = Theme.SurfaceHighlight
+    b.BackgroundTransparency = 0.55
+    b.Text = text
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 11
+    b.TextColor3 = Theme.TextPrimary
+    b.BorderSizePixel = 0
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+    return b
 end
 
-local function getReadyCommands(amount)
-    local selected = {}
-    for _,name in ipairs(CMDS_ORDER) do
-        if #selected >= amount then break end
-        if isCommandReady(name) then
-            table.insert(selected, name)
-        end
-    end
-    return selected
-end
+local spamBaseBtn = makeBtn("SPAM OWNER")
+local proxBtn = makeBtn("PROX AP: OFF")
 
-local function runSmartSequence(target)
-    if playerProcessing[target.UserId] then return end
-    playerProcessing[target.UserId] = true
-    task.spawn(function()
-        local panel = targetFolder:FindFirstChild("AdminPanel")
-        if not panel then playerProcessing[target.UserId] = false return end
-        
-        local function executeBatch(amt)
-            local stringsToSearch = getReadyCommands(amt)
-            if #stringsToSearch == 0 then return false end
-            local pBtn = nil
-            for _,d in pairs(panel:GetDescendants()) do
-                if (d:IsA("TextButton") or d:IsA("ImageButton")) and (d.Name:find(target.Name) or (d:FindFirstChildOfClass("TextLabel") and d:FindFirstChildOfClass("TextLabel").Text:find(target.Name))) then
-                    pBtn = d break
-                end
-            end
-            if pBtn then
-                for _,d in pairs(panel:GetDescendants()) do
-                    if d:IsA("TextButton") or d:IsA("ImageButton") then
-                        local txt = (d:IsA("TextButton") and d.Text or (d:FindFirstChildOfClass("TextLabel") and d:FindFirstChildOfClass("TextLabel").Text or "")):lower()
-                        for _,cmd in ipairs(stringsToSearch) do
-                            if txt:find(cmd) and (txt:find("^:") or txt:find("^;")) then
-                                click(pBtn)
-                                click(d)
-                                globalCooldowns[cmd] = tick() + COMMAND_DATA[cmd]
-                            end
+local distLbl = Instance.new("TextLabel", toolsFrame)
+distLbl.Size = UDim2.new(1, 0, 0, 16)
+distLbl.BackgroundTransparency = 1
+distLbl.TextXAlignment = Enum.TextXAlignment.Left
+distLbl.Font = Enum.Font.GothamBold
+distLbl.TextSize = 10
+distLbl.TextColor3 = Theme.TextPrimary
+
+local proxSliderBg = Instance.new("Frame", toolsFrame)
+proxSliderBg.Size = UDim2.new(1, 0, 0, 4)
+proxSliderBg.BackgroundColor3 = Color3.fromRGB(30, 32, 38)
+proxSliderBg.BorderSizePixel = 0
+Instance.new("UICorner", proxSliderBg).CornerRadius = UDim.new(1, 0)
+
+local proxFill = Instance.new("Frame", proxSliderBg)
+proxFill.BackgroundColor3 = Theme.Accent1
+proxFill.BorderSizePixel = 0
+proxFill.Size = UDim2.new(0, 0, 1, 0)
+Instance.new("UICorner", proxFill).CornerRadius = UDim.new(1, 0)
+
+local proxKnob = Instance.new("Frame", proxSliderBg)
+proxKnob.Size = UDim2.new(0, 10, 0, 10)
+proxKnob.BackgroundColor3 = Theme.TextPrimary
+proxKnob.BorderSizePixel = 0
+proxKnob.AnchorPoint = Vector2.new(0.5, 0.5)
+proxKnob.Position = UDim2.new(0, 0, 0.5, 0)
+Instance.new("UICorner", proxKnob).CornerRadius = UDim.new(1, 0)
+local proxKnobStroke = Instance.new("UIStroke", proxKnob)
+proxKnobStroke.Color = Theme.Accent1
+proxKnobStroke.Thickness = 1.5
+proxKnobStroke.Transparency = 0.2
+
+spamBaseBtn.MouseButton1Click:Connect(function()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    
+    local nearestPlot = nil
+    local nearestDist = math.huge
+    local Plots = Workspace:FindFirstChild("Plots")
+    
+    if Plots then
+        for _, plot in ipairs(Plots:GetChildren()) do
+            local sign = plot:FindFirstChild("PlotSign")
+            if sign then
+                local yourBase = sign:FindFirstChild("YourBase")
+                if not yourBase or not yourBase.Enabled then
+                    local signPos = sign:IsA("BasePart") and sign.Position or (sign.PrimaryPart and sign.PrimaryPart.Position)
+                    if not signPos then
+                        local part = sign:FindFirstChildWhichIsA("BasePart", true)
+                        signPos = part and part.Position
+                    end
+                    if signPos then
+                        local dist = (hrp.Position - signPos).Magnitude
+                        if dist < nearestDist then
+                            nearestDist = dist
+                            nearestPlot = plot
                         end
                     end
                 end
-                return true
-            end
-            return false
-        end
-        
-        executeBatch(3)
-        task.wait(Settings.NextActionDelay)
-        local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-        local tRoot = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
-        
-        if Settings.Enabled and root and tRoot and (root.Position - tRoot.Position).Magnitude <= Settings.Range then
-            executeBatch(3)
-            task.wait(Settings.NextActionDelay)
-            if Settings.Enabled and root and tRoot and (root.Position - tRoot.Position).Magnitude <= Settings.Range then
-                executeBatch(1)
             end
         end
-        playerProcessing[target.UserId] = nil
+    end
+    
+    if not nearestPlot then return end
+    
+    local targetPlayer = nil
+    if Synchronizer then
+        local ok, ch = pcall(function() return Synchronizer:Get(nearestPlot.Name) end)
+        if ok and ch then
+            local owner = ch:Get("Owner")
+            if owner then
+                if typeof(owner) == "Instance" and owner:IsA("Player") then
+                    targetPlayer = owner
+                elseif type(owner) == "table" and owner.Name then
+                    targetPlayer = Players:FindFirstChild(owner.Name)
+                end
+            end
+        end
+    end
+    
+    if not targetPlayer then
+        local sign = nearestPlot:FindFirstChild("PlotSign")
+        local textLabel = sign and sign:FindFirstChild("SurfaceGui") and sign.SurfaceGui:FindFirstChild("Frame") and sign.SurfaceGui.Frame:FindFirstChild("TextLabel")
+        if textLabel then
+            local baseText = textLabel.Text
+            local nickname = baseText and baseText:match("^(.-)'") or baseText
+            if nickname then
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p.DisplayName == nickname or p.Name == nickname then
+                        targetPlayer = p
+                        break
+                    end
+                end
+            end
+        end
+    end
+    
+    if not targetPlayer or targetPlayer == LocalPlayer then return end
+    
+    spamBaseBtn.BackgroundColor3 = Theme.Accent1
+    spamBaseBtn.TextColor3 = Color3.new(0, 0, 0)
+    
+    task.spawn(function()
+        for _, cmd in ipairs(ALL_COMMANDS) do
+            if not isOnCooldown(cmd) then
+                pcall(runAdminCommand, targetPlayer, cmd)
+                activeCooldowns[cmd] = tick()
+            end
+            task.wait(0.15)
+        end
+        task.wait(0.2)
+        spamBaseBtn.BackgroundColor3 = Theme.SurfaceHighlight
+        spamBaseBtn.TextColor3 = Theme.TextPrimary
     end)
+end)
+
+local ProximityAPActive = false
+local proxViz = nil
+local proximityRange = 25
+
+local function jackoo(val)
+    local min, max = 5, 50
+    val = math.clamp(val, min, max)
+    proximityRange = val
+    local pct = (val - min) / (max - min)
+    proxFill.Size = UDim2.new(pct, 0, 1, 0)
+    proxKnob.Position = UDim2.new(pct, 0, 0.5, 0)
+    distLbl.Text = "Range: " .. tostring(math.floor(val + 0.5)) .. " studs"
+    if proxViz then
+        proxViz.Size = Vector3.new(0.5, 50, 50)
+    end
 end
 
-if targetFolder:FindFirstChild(AP_NAME) then targetFolder[AP_NAME]:Destroy() end
-local sg = Instance.new("ScreenGui", targetFolder)
-sg.Name = AP_NAME
-sg.ResetOnSpawn = false
+jackoo(25)
 
-local main = Instance.new("Frame", sg)
-main.Size = UDim2.new(0, 140, 0, 70)
-main.Position = UDim2.new(0, 20, 0.4, -35)
-main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-main.BorderSizePixel = 0
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 4)
-local stroke = Instance.new("UIStroke", main)
-stroke.Thickness = 1
-stroke.Color = Color3.fromRGB(200, 50, 50)
-stroke.Transparency = 0.5
-
-local dragging, dragStart, startPos
-main.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = main.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then dragging = false end
-        end)
+local pDragging = false
+proxSliderBg.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then 
+        pDragging = true 
     end
 end)
-UserInputService.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - dragStart
-        main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+UserInputService.InputEnded:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then 
+        pDragging = false 
+    end
+end)
+UserInputService.InputChanged:Connect(function(i)
+    if pDragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+        local x = i.Position.X
+        local r = proxSliderBg.AbsolutePosition.X
+        local w = proxSliderBg.AbsoluteSize.X
+        if w > 0 then
+            local p = (x - r) / w
+            jackoo(5 + (p * 45))
+        end
     end
 end)
 
-local apLabel = Instance.new("TextLabel", main)
-apLabel.Size = UDim2.new(0.5, -5, 0, 25)
-apLabel.Position = UDim2.new(0, 8, 0, 8)
-apLabel.BackgroundTransparency = 1
-apLabel.Text = "AP spam:"
-apLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-apLabel.TextSize = 14
-apLabel.Font = Enum.Font.GothamBold
-apLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-local apToggle = Instance.new("TextButton", main)
-apToggle.Size = UDim2.new(0, 52, 0, 20)
-apToggle.Position = UDim2.new(0.5, 10, 0, 10)
-apToggle.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-apToggle.Text = "OFF"
-apToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-apToggle.TextSize = 11
-apToggle.Font = Enum.Font.GothamBold
-Instance.new("UICorner", apToggle).CornerRadius = UDim.new(0, 3)
-
-local rangeLabel = Instance.new("TextLabel", main)
-rangeLabel.Size = UDim2.new(0.5, -5, 0, 25)
-rangeLabel.Position = UDim2.new(0, 8, 0, 38)
-rangeLabel.BackgroundTransparency = 1
-rangeLabel.Text = "Range:"
-rangeLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-rangeLabel.TextSize = 14
-rangeLabel.Font = Enum.Font.GothamBold
-rangeLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-local rangeValue = Instance.new("TextButton", main)
-rangeValue.Size = UDim2.new(0, 52, 0, 20)
-rangeValue.Position = UDim2.new(0.5, 10, 0, 40)
-rangeValue.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-rangeValue.Text = "30"
-rangeValue.TextColor3 = Color3.fromRGB(255, 255, 255)
-rangeValue.TextSize = 11
-rangeValue.Font = Enum.Font.GothamBold
-Instance.new("UICorner", rangeValue).CornerRadius = UDim.new(0, 3)
-
-local ring = Instance.new("Part", Workspace)
-ring.Name = RING_NAME
-ring.Shape = Enum.PartType.Cylinder
-ring.Material = Enum.Material.Neon
-ring.Color = Color3.fromRGB(255, 0, 0)
-ring.CanCollide = false
-ring.Anchored = true
-ring.Transparency = 0.4
-
-apToggle.MouseButton1Click:Connect(function()
-    Settings.Enabled = not Settings.Enabled
-    apToggle.Text = Settings.Enabled and "ON" or "OFF"
-    apToggle.BackgroundColor3 = Settings.Enabled and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
-end)
-
-rangeValue.MouseButton1Click:Connect(function()
-    rangeIndex = (rangeIndex % #rangeList) + 1
-    Settings.Range = rangeList[rangeIndex]
-    rangeValue.Text = Settings.Range
-end)
-
-RunService.RenderStepped:Connect(function()
-    local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if root then
-        ring.CFrame = root.CFrame * CFrame.Angles(0,0,math.rad(90)) + Vector3.new(0,-3.2,0)
-        ring.Size = Vector3.new(0.1, Settings.Range * 2, Settings.Range * 2)
-        ring.Transparency = 0.4
+RunService.Heartbeat:Connect(function()
+    if ProximityAPActive then
+        if not proxViz then
+            proxViz = Instance.new("Part")
+            proxViz.Name = "XiProxViz"
+            proxViz.Anchored = true
+            proxViz.CanCollide = false
+            proxViz.Shape = Enum.PartType.Cylinder
+            proxViz.Color = Theme.Accent1
+            proxViz.Transparency = 0.6
+            proxViz.CastShadow = false
+            proxViz.Parent = Workspace
+        end
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            proxViz.Size = Vector3.new(0.5, 50, 50)
+            proxViz.CFrame = hrp.CFrame * CFrame.Angles(0, 0, math.rad(90)) + Vector3.new(0, -2.5, 0)
+        end
     else
-        ring.Transparency = 1
+        if proxViz then
+            proxViz:Destroy()
+            proxViz = nil
+        end
     end
 end)
 
 task.spawn(function()
     while true do
-        task.wait(Settings.CheckRate)
-        if Settings.Enabled then
-            local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            if root then
-                for _,p in pairs(Players:GetPlayers()) do
-                    if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                        if (root.Position - p.Character.HumanoidRootPart.Position).Magnitude <= Settings.Range then
-                            runSmartSequence(p)
+        task.wait(0.2)
+        if ProximityAPActive then
+            local myChar = LocalPlayer.Character
+            if myChar and myChar:FindFirstChild("HumanoidRootPart") then
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        local dist = (p.Character.HumanoidRootPart.Position - myChar.HumanoidRootPart.Position).Magnitude
+                        if dist <= proximityRange then
+                            for _, cmd in ipairs(ALL_COMMANDS) do
+                                if not isOnCooldown(cmd) then
+                                    pcall(runAdminCommand, p, cmd)
+                                    activeCooldowns[cmd] = tick()
+                                end
+                                task.wait(0.05)
+                            end
                         end
                     end
                 end
@@ -228,3 +362,17 @@ task.spawn(function()
         end
     end
 end)
+
+local function jack()
+    proxBtn.Text = "PROX AP: " .. (ProximityAPActive and "ON" or "OFF")
+    proxBtn.BackgroundColor3 = ProximityAPActive and Theme.Accent1 or Theme.SurfaceHighlight
+    proxBtn.BackgroundTransparency = ProximityAPActive and 0 or 0.55
+    proxBtn.TextColor3 = ProximityAPActive and Color3.new(0, 0, 0) or Theme.TextPrimary
+end
+
+proxBtn.MouseButton1Click:Connect(function()
+    ProximityAPActive = not ProximityAPActive
+    jack()
+end)
+
+jack()
